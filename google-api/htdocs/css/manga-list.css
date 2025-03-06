@@ -1,0 +1,118 @@
+/* Manga List Page Specific Styles */
+.filter-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.filter-controls .btn-group {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.filter-controls .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.manga-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.manga-list-item {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.manga-list-item:hover {
+    transform: translateY(-5px);
+}
+
+.manga-list-item .manga-cover {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+}
+
+.manga-list-item .manga-info {
+    padding: 15px;
+}
+
+.manga-list-item .manga-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    height: 2.8em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.manga-list-item .rating {
+    margin-bottom: 8px;
+}
+
+.manga-list-item .stars {
+    color: #ffc107;
+    font-size: 0.9rem;
+}
+
+.manga-list-item .rating-number {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-left: 5px;
+}
+
+.manga-list-item .chapter-updates {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.manga-list-item .chapter {
+    font-weight: 500;
+    color: #495057;
+}
+
+.manga-list-item .update-time {
+    font-size: 0.8rem;
+}
+
+/* Pagination Customization */
+.pagination .page-link {
+    color: #ee3e54;
+    padding: 8px 16px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #ee3e54;
+    border-color: #ee3e54;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .manga-list-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .filter-controls .btn-group {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+    }
+
+    .filter-controls .btn {
+        width: 100%;
+        margin: 0;
+        border-radius: 4px !important;
+    }
+}

@@ -1,0 +1,103 @@
+/* Manga Detail Styles */
+.manga-detail-wrapper {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.manga-cover-large {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.manga-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.manga-metadata {
+    margin-bottom: 1rem;
+}
+
+.rating {
+    text-align: center;
+}
+
+.stars {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+.rating-number {
+    color: #212529;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.rating-count {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.chapter-list {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.chapter-item {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chapter-item:hover {
+    background: #e9ecef;
+}
+
+.chapter-link {
+    color: #212529;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.chapter-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.description {
+    color: #495057;
+    line-height: 1.6;
+}
+
+.genres .badge {
+    font-weight: 500;
+    padding: 6px 12px;
+    margin-right: 5px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+@media (max-width: 768px) {
+    .chapter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .manga-detail-wrapper {
+        padding: 15px;
+    }
+}

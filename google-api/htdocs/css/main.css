@@ -1,0 +1,299 @@
+/*<!--WEBSITE ĐƯỢC CODE BY DEV HAI -->
+<!--SỬ DỤNG CHO MỤC ĐÍCH PHI LỢI NHUẬN -->*/
+/* Main Styles */
+@import 'navbar.css';
+@import 'manga-card.css';
+
+body {
+    background-color: #f8f9fa;
+}
+
+.section-title {
+    border-left: 4px solid #ee3e54;
+    padding-left: 10px;
+    margin-bottom: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.section-wrapper {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+/* .manga-card {
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #fff;
+    transition: box-shadow 0.3s;
+    flex: 1 1 18%; 
+    margin: 10px; 
+}
+.manga-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.manga-cover {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+.manga-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+} */
+
+
+/* CSS PHẦN FOOTER*/
+footer {
+    background-color: #343a40;
+    color: #fff;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+footer nav a {
+    padding: 0 15px;
+}
+
+footer nav a + a::before {
+    padding-left: 15px;
+}
+/*In đậm thanh chuyển hướng*/
+.active-page {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+
+/* Style cho dropdown */
+/* .nav-item.dropdown:hover .dropdown-menu {
+    display: block; 
+}
+
+.dropdown-menu {
+    display: none; 
+}
+
+.nav-item.dropdown:hover .nav-link {
+    color: #007bff; 
+}
+ */
+
+
+ 
+/* Chapter List Styles */
+.chapter-list {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title i {
+    color: #ef4444;
+}
+
+.chapters {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.chapter-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.chapter-item:hover {
+    color: #ef4444;
+    cursor: pointer;
+}
+
+.date {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.btn-more {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.btn-more:hover {
+    color: #ef4444;
+}
+
+/*css băng truyền hình ảnh*/
+  /* .carousel-item.active,
+  .carousel-item-next,
+  .carousel-item-prev {
+    display: block;
+  }
+  
+  .carousel-item-next:not(.carousel-item-left),
+  .active.carousel-item-right {
+    transform: translateX(100%);
+  }
+  
+  .carousel-item-prev:not(.carousel-item-right),
+  .active.carousel-item-left {
+    transform: translateX(-100%);
+  }
+  
+  .carousel-fade .carousel-item {
+    opacity: 0;
+    transition-property: opacity;
+    transform: none;
+  }
+  .carousel-fade .active.carousel-item-left,
+  .carousel-fade .active.carousel-item-right {
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0s 0.6s;
+  }
+  
+  
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-control-prev,
+    .carousel-control-next {
+      transition: none;
+    }
+  }
+  
+  .carousel-control-prev {
+    left: 0;
+  }
+  
+  .carousel-control-next {
+    right: 0;
+  }
+  
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .carousel-control-prev-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath d='M5.25 0l-4 4 4 4 1.5-1.5L4.25 4l2.5-2.5L5.25 0z'/%3e%3c/svg%3e");
+  }
+  
+  .carousel-control-next-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath d='M2.75 0l-1.5 1.5L3.75 4l-2.5 2.5L2.75 8l4-4-4-4z'/%3e%3c/svg%3e");
+  }
+  
+  
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-indicators li {
+      transition: none;
+    }
+  }
+  
+  .carousel-item img {
+    width: 100%;
+    height: 410px; 
+    object-fit: cover; 
+} */
+    .carousel-item img {
+        width: 100%;
+        height: 400px; /* Chiều cao mặc định cho các thiết bị lớn */
+        object-fit: cover;
+        }
+
+        /* Điều chỉnh kích thước hình ảnh cho các thiết bị nhỏ hơn */
+        @media (max-width: 768px) {
+            .carousel-item img {
+                height: 250px; /* Giảm chiều cao cho các thiết bị di động */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .carousel-item img {
+                height: 200px; /* Giảm chiều cao hơn nữa cho các thiết bị rất nhỏ */
+            }
+        }
+
+/*css thanh search*/
+.search-box {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #333;
+    width: 200px;
+}
+
+.search-box i {
+    color: #666;
+    margin-left: 0.5rem;
+}
+
+/*hover bìa ảnh*/
+.manga-cover {
+    transition: transform 0.3s ease;
+}
+.manga-cover:hover {
+    transform: scale(1.1);
+}
+.status1 {
+    background-color: rgba(0, 0, 0, 0.6); /* Tạo nền mờ cho văn bản */
+    color: white; /* Màu chữ trắng */
+    padding: 5px 10px; /* Thêm khoảng cách xung quanh chữ */
+    border-radius: 5px; /* Bo góc */
+}
+
+badge-18 {
+    position: absolute;
+    top: 10px;    /* Di chuyển từ dưới lên trên */
+    left: 10px;   /* Vẫn giữ khoảng cách từ bên trái */
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+.manga-card {
+    position: relative; 
+}

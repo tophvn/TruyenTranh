@@ -1,0 +1,15 @@
+# Bật Rewrite Engine
+RewriteEngine On
+
+# Xử lý lỗi 404 bằng trang 404.php
+ErrorDocument 404 /404.php
+
+# Ẩn đuôi .php trong URL
+# Chuyển hướng từ URL có .php sang URL không có .php (ví dụ: index.php -> index)
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
+RewriteRule ^ %1 [R=301,L]
+
+# Chuyển yêu cầu không có .php sang file .php tương ứng nếu tồn tại
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [L]

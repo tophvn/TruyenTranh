@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Loại bỏ đuôi .php
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*)$ $1.php [L]
+
+# Chuyển hướng từ index.php sang /
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/.*index\.php [NC]
+RewriteRule ^(.*)index\.php$ /$1 [R=301,NC,L]

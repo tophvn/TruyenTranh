@@ -1,0 +1,517 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --accent-color: #ff5722;
+    --bg-color: #ffffff;
+    --text-color: #333;
+    --border-color: #e0e0e0;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    --gradient: linear-gradient(135deg, #ff8a50, #ff5722);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-color);
+    background-color: #f5f7fa;
+    line-height: 1.6;
+}
+
+.manga-detail {
+    margin-top: 20px;
+    display: flex;
+    gap: 30px;
+}
+
+.manga-info {
+    display: flex;
+    align-items: flex-start;
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.manga-cover {
+    width: 200px;
+    height: auto;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.manga-cover:hover {
+    transform: scale(1.05);
+}
+
+.manga-stats {
+    flex-grow: 1;
+    padding-left: 20px;
+}
+
+.rating {
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.rating i {
+    margin-right: img 5px;
+}
+
+.tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    background-color: #f1f1f1;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-color);
+    transition: background-color 0.3s ease;
+}
+
+.tag:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.follow-button {
+    background-color: var(--accent-color);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.follow-button:hover {
+    background-color: #ff7043;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+}
+
+.description {
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.chapter-list {
+    background: var(--bg-color);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: var(--shadow);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.chapter-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.chapter-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding-left: 10px;
+}
+
+.chapter-name {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.chapter-details {
+    color: var(--secondary-color);
+    font-size: 12px;
+}
+
+.btn-more {
+    margin-top: 15px;
+    width: 100%;
+    background: var(--gradient);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.btn-more:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+}
+
+.recommended-stories {
+    background: var(--bg-color);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.recommended-stories h3 {
+    font-size: 20px;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.recommended-stories h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: var(--gradient);
+    transition: width 0.3s ease;
+}
+
+.recommended-stories:hover h3::after {
+    width: 100px;
+}
+
+.recommended-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(90deg, #ffffff, #f9fbfd);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.recommended-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.recommended-item:hover {
+    background: linear-gradient(90deg, #f9fbfd, #ffffff);
+    transform: translateX(10px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(255, 87, 34, 0.2);
+}
+
+.recommended-item a {
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.recommended-image {
+    width: 80px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recommended-image:hover {
+    transform: scale(1.1);
+}
+
+.recommended-details {
+    flex-grow: 1;
+    padding-left: 15px;
+}
+
+.recommended-title {
+    display: block;
+    font-size: 16px;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.recommended-title:hover {
+    color: var(--accent-color);
+}
+
+.recommended-chapter {
+    display: block;
+    font-size: 12px;
+    color: var(--secondary-color);
+    opacity: 0.9;
+}
+
+.comment-section {
+    background: var(--bg-color);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+}
+
+.comment-section h3 {
+    font-size: 20px;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.comment-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    resize: vertical;
+    font-size: 14px;
+}
+
+.comment-form button {
+    background: var(--gradient);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.comment-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+}
+
+.comment-list {
+    margin-top: 20px;
+}
+
+.comment-item {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-username {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.comment-content {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.comment-date {
+    font-size: 12px;
+    color: var(--secondary-color);
+}
+
+@media (min-width: 768px) {
+    .left-column {
+        flex: 2;
+    }
+    .right-column {
+        flex: 1;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 767px) {
+    .manga-detail {
+        flex-direction: column;
+    }
+    .manga-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .manga-cover {
+        width: 150px;
+        margin-bottom: 15px;
+    }
+    .manga-stats {
+        padding-left: 0;
+        text-align: center;
+    }
+    .chapter-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .chapter-details {
+        margin-top: 5px;
+    }
+    .recommended-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 10px;
+    }
+    .recommended-image {
+        width: 100%;
+        max-width: 120px;
+        margin-bottom: 10px;
+    }
+    .recommended-details {
+        padding-left: 0;
+    }
+    .btn-more {
+        font-size: 14px;
+        padding: 8px;
+    }
+    .recommended-stories h3 {
+        font-size: 18px;
+    }
+}
+
+.right-column {
+    width: 100%;
+    max-width: 300px;
+}
+
+.recommended-stories {
+    padding: 10px;
+}
+
+.recommended-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.recommended-image {
+    width: 60px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.recommended-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.recommended-title {
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recommended-chapter {
+    font-size: 12px;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .right-column {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    .recommended-item {
+        flex-direction: row;
+    }
+    .recommended-image {
+        width: 50px;
+        height: 70px;
+    }
+    .recommended-title {
+        font-size: 13px;
+    }
+    .recommended-chapter {
+        font-size: 11px;
+    }
+}
+
+.comment-section .comment-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+.comment-section .comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+.comment-section .comment-details {
+    flex: 1;
+}
+.comment-section .comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.comment-section .comment-username {
+    font-weight: bold;
+    color: #333;
+    margin-right: 10px;
+}
+.comment-section .comment-time {
+    color: #777;
+    font-size: 0.8rem;
+}
+.comment-section .comment-content {
+    color: #666;
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+.comment-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+.comment-form button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.comment-form button:hover {
+    background-color: #0056b3;
+}

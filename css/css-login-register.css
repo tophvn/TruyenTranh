@@ -1,0 +1,222 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+body {
+  font-family: "Roboto", sans-serif;
+  color: #818181;
+  font-size: 15px;
+}
+
+a {
+  -webkit-transition: .3s all ease;
+  transition: .3s all ease;
+  color: #7754F6;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #643cf5;
+}
+
+.bg-img,
+.form-wrap {
+  height: 100vh;
+  min-height: 500px;
+}
+
+.bg-img {
+  left: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  width: 100%;
+  position: relative;
+  height: 200px;
+  min-height: 200px;
+  z-index: 2;
+}
+
+@media (min-width: 768px) {
+  .bg-img {
+    position: fixed;
+    width: 50%;
+    height: 100vh;
+  }
+}
+
+@media (min-width: 992px) {
+  .bg-img {
+    position: fixed;
+    width: 50%;
+    height: 100vh;
+  }
+}
+
+@media (min-width: 1200px) {
+  .bg-img {
+    position: fixed;
+    width: 60%;
+    height: 100vh;
+  }
+}
+
+.form-wrap {
+  right: 0;
+  position: relative;
+  z-index: 1;
+  padding: 5%;
+  width: 100%;
+  background: #fff;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .form-wrap {
+    position: absolute;
+    width: 50%;
+  }
+}
+
+@media (min-width: 992px) {
+  .form-wrap {
+    position: absolute;
+    width: 50%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .form-wrap {
+    position: absolute;
+    width: 40%;
+  }
+}
+
+.form-wrap .title {
+  font-size: 50px;
+  color: #000;
+}
+
+.form-wrap .form-floating {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.form-wrap .form-floating .form-control {
+  height: 60px !important;
+  border-radius: 10px !important;
+}
+
+.form-wrap .form-floating .form-control:active, .form-wrap .form-floating .form-control:focus {
+  outline: none;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+  border-color: #7754F6;
+}
+
+.form-wrap .password-show-toggle {
+  cursor: pointer;
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  z-index: 9;
+}
+
+.form-wrap .password-show-toggle span {
+  font-size: 20px;
+}
+
+.form-wrap .password-show-toggle span:before {
+  font-family: 'unicons-line';
+  content: "\ebf8";
+}
+
+.form-wrap .password-show-toggle.active span:before {
+  content: "\ebaf";
+}
+
+.form-wrap .form-check {
+  margin-bottom: 30px;
+}
+
+.form-wrap .form-check .form-check-input {
+  border-color: #d1d1d1 !important;
+}
+
+.form-wrap .form-check .form-check-input:checked {
+  background-color: #7754F6;
+  border-color: #7754F6 !important;
+  outline: none;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
+
+.form-wrap .form-check .form-check-input:focus, .form-wrap .form-check .form-check-input:active {
+  outline: none;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
+
+.form-wrap .btn-primary {
+  border-radius: 10px;
+  background-color: #7754F6;
+  border-color: #7754F6;
+  height: 60px;
+  font-weight: 500;
+  -webkit-box-shadow: 0 15px 30px -7px rgba(119, 84, 246, 0.5);
+          box-shadow: 0 15px 30px -7px rgba(119, 84, 246, 0.5);
+  -webkit-transition: .3s all ease;
+  transition: .3s all ease;
+  font-size: 18px;
+}
+
+.form-wrap .btn-primary:hover {
+  background-color: #643cf5;
+  border-color: #643cf5;
+}
+
+.form-wrap .social-account-wrap {
+  padding-top: 30px;
+  padding-bottom: 50px;
+}
+
+.form-wrap .social-account-wrap h4 {
+  text-align: center;
+  font-size: 14px;
+  font-weight: normal;
+  position: relative;
+}
+
+.form-wrap .social-account-wrap h4 span {
+  z-index: 1;
+  display: inline-block;
+  padding-left: 20px;
+  padding-right: 20px;
+  background: #fff;
+}
+
+.form-wrap .social-account-wrap h4:before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+  width: 100%;
+  height: 1px;
+  background-color: #d1d1d1;
+  z-index: -1;
+}
+
+.form-wrap .social-account-wrap .social-account li {
+  width: calc(25% - 0);
+}
+
+.form-wrap .social-account-wrap .social-account li a {
+  display: inline-block;
+  border: 1px solid #d1d1d1;
+  padding: 10px;
+  border-radius: 10%;
+}
+
+.form-wrap .social-account-wrap .social-account li a:hover {
+  border-color: #bdbdbd;
+}

@@ -1,0 +1,342 @@
+/* Reset và kiểu cơ bản */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
+  color: #1a202c;
+  line-height: 1.6;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  padding: 15px 20px;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header .logo {
+  font-size: 2rem;
+  color: #ffcd3c;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.header .logo:hover {
+  color: #fff;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 15px;
+  border-radius: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  max-width: 450px;
+  width: 100%;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #1a202c;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.search-box i {
+  color: #ef4444;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.search-box i:hover {
+  color: #dc2626;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-actions a {
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 20px;
+  background: linear-gradient(90deg, #ffcd3c, #f4a261);
+  border-radius: 25px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-actions a:hover {
+  background: linear-gradient(90deg, #e6b800, #e76f51);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hamburger-btn {
+  display: none;
+  color: #ffcd3c;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.hamburger-btn:hover {
+  color: #fff;
+}
+
+/* Section Title */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e3c72;
+  border-left: 5px solid #ee3e54;
+  padding-left: 15px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title i {
+  color: #ee3e54;
+}
+
+/* Section Wrapper */
+.section-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
+  margin-bottom: 40px;
+}
+
+/* Manga Card */
+.manga-card {
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin: 10px 0;
+  position: relative; /* Đảm bảo thẻ cha có position: relative */
+}
+
+.manga-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.manga-card .card-img-top {
+  width: 100%;
+  height: 250px; /* Chiều cao cố định cho ảnh */
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block; /* Đảm bảo ảnh là block để không bị lệch */
+}
+
+.manga-card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+.manga-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e3c72;
+  margin: 10px 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 5px;
+}
+
+.manga-title:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-muted {
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+.text-muted i {
+  margin-right: 5px;
+}
+
+.vip-card {
+  border: 2px solid #ffcd3c;
+  position: relative;
+}
+
+.vip-card::before {
+  content: "VIP";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ffcd3c;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+}
+
+/* Tag 18+ ở góc trên bên phải */
+.badge-18plus {
+  position: absolute;
+  top: 10px; /* Cách đỉnh ảnh 10px */
+  right: 10px; /* Cách mép phải ảnh 10px */
+  background: #ef4444;
+  color: #fff;
+  padding: 4px 8px; /* Tăng padding để dễ nhìn hơn */
+  border-radius: 5px;
+  font-size: 0.8rem; /* Tăng kích thước chữ một chút */
+  font-weight: 600;
+  z-index: 10; /* Đảm bảo tag nằm trên ảnh */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Thêm bóng để nổi bật */
+}
+
+/* Pagination */
+.pagination {
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination .page-link {
+  color: #1e3c72;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+  background: #ee3e54;
+  color: #fff;
+  border-color: #ee3e54;
+}
+
+.pagination .active-page {
+  font-weight: bold;
+  background: #ee3e54;
+  color: #fff;
+  border-color: #ee3e54;
+}
+
+/* Footer */
+.footer {
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  color: #fff;
+  padding: 30px 0;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.footer a {
+  color: #ffcd3c;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: #e6b800;
+  text-decoration: underline;
+}
+
+.footer nav a {
+  padding: 0 15px;
+}
+
+.footer nav a + a::before {
+  content: "•";
+  padding-left: 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header {
+    padding: 10px;
+  }
+
+  .search-box {
+    max-width: 100%;
+    margin: 10px 0;
+  }
+
+  .hamburger-btn {
+    display: block;
+  }
+
+  .nav-container {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #1e3c72;
+    padding: 15px;
+    flex-direction: column;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
+
+  .header.active .nav-container {
+    display: flex;
+  }
+
+  .search-box input {
+    width: 80%;
+  }
+
+  .user-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .user-actions a {
+    width: 100%;
+    text-align: center;
+    margin: 5px 0;
+  }
+
+  /* Chia thành 2 cột khi thu nhỏ màn hình */
+  .col-lg-2, .col-md-4, .col-sm-6, .col-12,
+  .col-6, .col-md-3 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .manga-card .card-img-top {
+    height: 180px;
+  }
+
+  .manga-title {
+    font-size: 1rem;
+  }
+
+  .pagination {
+    margin-top: 15px;
+  }
+}
