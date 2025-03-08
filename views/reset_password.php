@@ -1,34 +1,46 @@
 <?php
-include('../config/database.php'); // Kết nối đến cơ sở dữ liệu
+include('../config/database.php'); 
+if (!$conn) {
+    die("Kết nối cơ sở dữ liệu thất bại: " . mysqli_connect_error());
+}
 
 // Kiểm tra nếu có mã xác nhận từ URL (token)
-if (!isset($_GET['token'])) {
-    echo "Mã xác nhận không hợp lệ.";
-    exit();
+if (!isset($_GET['token']) || empty($_GET['token'])) {
+    $error_message = "Mã xác nhận không được cung cấp.";
+} else {
+    $token = trim($_GET['token']); 
+
+    // Debug: Ghi log token từ URL
+    error_log("Token từ URL: " . $token);
+
+    // Truy vấn kiểm tra token (đồng bộ với forgot_password.php)
+    $token = mysqli_real_escape_string($conn, $token); // Bảo vệ SQL Injection
+    $query = "SELECT * FROM users WHERE reset_token = '$token'";
+    $result = $conn->query($query);
+
+    // Debug: Ghi log truy vấn và số hàng trả về
+    error_log("Truy vấn: " . $query);
+    error_log("Số hàng trả về: " . ($result ? $result->num_rows : 'Lỗi'));
+
+    if ($result === false) {
+        $error_message = "Lỗi truy vấn cơ sở dữ liệu: " . $conn->error;
+        error_log("Lỗi truy vấn: " . $conn->error);
+    } elseif ($result->num_rows == 0) {
+        $error_message = "Mã xác nhận không hợp lệ hoặc đã hết hạn. (Token: '$token')";
+        error_log("Không tìm thấy token trong DB: " . $token);
+    } else {
+        $row = $result->fetch_assoc();
+        $email = $row['email'];
+        error_log("Token hợp lệ, email: " . $email);
+    }
 }
 
-$token = $_GET['token'];
-$query = "SELECT * FROM users WHERE reset_token = ?";
-$stmt = $conn->prepare($query); // Sử dụng Prepared Statements
-$stmt->bind_param("s", $token);
-$stmt->execute();
-$result = $stmt->get_result(); // Lấy kết quả
+$error = ""; 
+$success_message = "";
 
-if ($result === false || $result->num_rows == 0) {
-    echo "Mã xác nhận không hợp lệ hoặc đã hết hạn.";
-    exit();
-}
-
-$row = $result->fetch_assoc();
-$email = $row['email'];
-
-$error = ""; // Khởi tạo biến lỗi
-$success_message = ""; // Khởi tạo biến thông báo thành công
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($email) && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
-
     // Kiểm tra điều kiện mật khẩu
     if (strlen($new_password) < 6) {
         $error = "Mật khẩu phải lớn hơn 6 ký tự.";
@@ -37,47 +49,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($new_password !== $confirm_password) {
         $error = "Mật khẩu xác nhận không khớp.";
     } else {
-        // Băm mật khẩu mới bằng md5
         $hashed_password = md5($new_password);
-        $update_query = "UPDATE users SET password = ?, reset_token = NULL WHERE email = ?";
-        $update_stmt = $conn->prepare($update_query); // Sử dụng Prepared Statements
-        $update_stmt->bind_param("ss", $hashed_password, $email);
+        $hashed_password = mysqli_real_escape_string($conn, $hashed_password);
+        $email = mysqli_real_escape_string($conn, $email);
+        $update_query = "UPDATE users SET password = '$hashed_password', reset_token = NULL WHERE email = '$email'";
         
-        if ($update_stmt->execute()) { // Kiểm tra truy vấn thành công
+        if ($conn->query($update_query)) {
             $success_message = "Mật khẩu của bạn đã được thay đổi thành công.";
         } else {
-            $error = "Có lỗi xảy ra khi cập nhật mật khẩu.";
+            $error = "Có lỗi xảy ra khi cập nhật mật khẩu: " . $conn->error;
         }
     }
 }
-
-// Đóng kết nối khi không còn sử dụng
 $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="../img/logo.png" rel="icon">
-    <title>Đặt lại Mật Khẩu</title>
+    <title>Đặt Lại Mật Khẩu - TRUYENTRANHNET</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link rel="stylesheet" href="../css/css-login-register.css">
 </head>
 <body>
+    <?php include('../includes/header.php'); ?>
     <div class="site-wrap d-md-flex align-items-stretch">
         <div class="bg-img" style="background-image: url('../img/reset-1.jpg')"></div>
         <div class="form-wrap">
             <div class="form-inner">
                 <h1 class="title">Đặt Lại Mật Khẩu</h1>
-                <?php if (!empty($error)): ?>
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger">
+                        <p><?php echo $error_message; ?></p>
+                    </div>
+                    <div class="mb-2 text-center">Quay lại <a href="login.php">Đăng Nhập</a></div>
+                <?php elseif (!empty($error)): ?>
                     <div class="alert alert-danger">
                         <p><?php echo $error; ?></p>
                     </div>
-                <?php endif; ?>
-                <?php if (!empty($success_message)): ?>
+                <?php elseif (!empty($success_message)): ?>
                     <div class="alert alert-success">
                         <p><?php echo $success_message; ?></p>
                     </div>
@@ -99,7 +113,7 @@ $conn->close();
                         <div class="d-grid mb-4">
                             <button type="submit" class="btn btn-primary">Cập nhật mật khẩu</button>
                         </div>
-                        <div class="mb-2">Quay lại <a href="login.php">Đăng Nhập</a></div>
+                        <div class="mb-2 text-center">Quay lại <a href="login.php">Đăng Nhập</a></div>
                     </form>
                 <?php endif; ?>
             </div>

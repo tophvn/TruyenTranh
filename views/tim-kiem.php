@@ -2,6 +2,10 @@
 include('../config/database.php');
 session_start();
 
+// Lấy tham số từ URL
+$keyword = $_GET['keyword'] ?? '';
+$page = max(1, (int)($_GET['page'] ?? 1)); // Đảm bảo page không nhỏ hơn 1
+
 // Hàm tính khoảng thời gian từ ngày cập nhật
 function timeAgo($dateString) {
     if (empty($dateString)) return 'N/A';
@@ -42,6 +46,29 @@ function translateStatus($status) {
             return 'Sắp Ra Mắt';
         default:
             return 'Không Xác Định';
+    }
+}
+
+// Gọi API tìm kiếm với phân trang
+$searchResults = [];
+$totalPages = 1;
+$totalItems = 0; 
+if (!empty($keyword)) {
+    $apiUrl = "https://otruyenapi.com/v1/api/tim-kiem?keyword=" . urlencode($keyword) . "&page={$page}";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response !== false) {
+        $result = json_decode($response, true);
+        if ($result && $result['status'] === 'success' && isset($result['data']['items'])) {
+            $searchResults = $result['data']['items'];
+            $totalItems = $result['data']['params']['pagination']['totalItems'] ?? 0; 
+            $itemsPerPage = $result['data']['params']['pagination']['totalItemsPerPage'] ?? 24;
+            $totalPages = ($itemsPerPage > 0) ? ceil($totalItems / $itemsPerPage) : 1;
+        }
     }
 }
 ?>
@@ -85,86 +112,111 @@ function translateStatus($status) {
             border-radius: 3px;
             z-index: 10;
         }
+        .pagination .page-link {
+            color: #00b7eb;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #00b7eb;
+            border-color: #00b7eb;
+            color: #fff;
+        }
     </style>
 </head>
 <body class="dark-mode">
     <?php include '../includes/header.php'; ?>
     <div class="container my-4">
-    <br><br><br><h4 class="section-title text-center"><i class="fas fa-search"></i> TÌM KIẾM TRUYỆN</h4>
+        <br><br><br><br>
+        <h4 class="section-title text-center"><i class="fas fa-search"></i> TÌM KIẾM TRUYỆN</h4>
         <form method="GET" action="tim-kiem.php" class="mb-4">
             <div class="input-group">
-                <input type="text" name="keyword" class="form-control" placeholder="Nhập từ khóa tìm kiếm" value="<?= htmlspecialchars($_GET['keyword'] ?? '') ?>" required>
+                <input type="text" name="keyword" class="form-control" placeholder="Nhập từ khóa tìm kiếm" value="<?= htmlspecialchars($keyword) ?>" required>
                 <button class="btn btn-primary" type="submit">Tìm kiếm</button>
             </div>
         </form>
 
-        <?php
-        if (isset($_GET['keyword'])) {
-            $keyword = $_GET['keyword'];
-            $apiUrl = "https://otruyenapi.com/v1/api/tim-kiem?keyword=" . urlencode($keyword);
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $apiUrl);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $response = curl_exec($ch);
-            curl_close($ch);
-
-            if ($response === false) {
-                echo "<p class='text-center'>Không thể kết nối tới Server.</p>";
-            } else {
-                $result = json_decode($response, true);
-                if (!$result || $result['status'] !== 'success' || !isset($result['data']['items'])) {
-                    echo "<p class='text-center'>Không có kết quả tìm kiếm cho từ khóa: " . htmlspecialchars($keyword) . "</p>";
-                } else {
-                    $searchResults = $result['data']['items'];
-        ?>
-                    <h5 class="mt-4 text-center">KẾT QUẢ TÌM KIẾM CHO: "<?= htmlspecialchars($keyword) ?>"</h5>
-                    <div class="row g-4 fade-in">
-                        <?php if (!empty($searchResults)): ?>
-                            <?php foreach ($searchResults as $comic): ?>
-                                <div class="col-6 col-md-4 col-lg-2 mb-4">
-                                    <div class="manga-card">
-                                        <a href="../views/truyen-detail.php?slug=<?= urlencode($comic['slug']) ?>" class="text-decoration-none position-relative">
-                                            <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($comic['thumb_url']) ?>" 
-                                                 class="card-img-top manga-cover" 
-                                                 alt="<?= htmlspecialchars($comic['name']) ?>" 
-                                                 loading="lazy">
-                                            <?php 
-                                            if (isset($comic['category']) && is_array($comic['category'])) {
-                                                foreach ($comic['category'] as $cat) {
-                                                    if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
-                                                        echo '<span class="badge-18plus">18+</span>';
-                                                        break;
-                                                    }
-                                                }
+        <?php if (!empty($keyword)): ?>
+            <?php if ($response === false): ?>
+                <p class="text-center">Không thể kết nối tới Server.</p>
+            <?php elseif (empty($searchResults)): ?>
+                <p class="text-center">Không có kết quả tìm kiếm cho từ khóa: "<?= htmlspecialchars($keyword) ?>"</p>
+            <?php else: ?>
+                <h5 class="mt-4 text-center">KẾT QUẢ TÌM KIẾM CHO: "<?= htmlspecialchars($keyword) ?>" (<?= number_format($totalItems) ?> Truyện)</h5>
+                <div class="row g-4 fade-in">
+                    <?php foreach ($searchResults as $comic): ?>
+                        <div class="col-6 col-md-4 col-lg-2 mb-4">
+                            <div class="manga-card">
+                                <a href="../views/truyen-detail.php?slug=<?= urlencode($comic['slug']) ?>" class="text-decoration-none position-relative">
+                                    <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($comic['thumb_url']) ?>" 
+                                         class="card-img-top manga-cover" 
+                                         alt="<?= htmlspecialchars($comic['name']) ?>" 
+                                         loading="lazy">
+                                    <?php 
+                                    if (isset($comic['category']) && is_array($comic['category'])) {
+                                        foreach ($comic['category'] as $cat) {
+                                            if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
+                                                echo '<span class="badge-18plus">18+</span>';
+                                                break;
                                             }
-                                            ?>
-                                        </a>
-                                        <div class="card-body p-2">
-                                            <h5 class="manga-title" title="<?= htmlspecialchars($comic['name']) ?>"><?= htmlspecialchars($comic['name']) ?></h5>
-                                            <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                                <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                                <span><i class="fas fa-clock"></i> <?= timeAgo($comic['updatedAt'] ?? null) ?></span>
-                                            </div>
-                                            <div class="text-muted small mt-1">
-                                                <i class="fas fa-eye"></i> <?= getViews($comic['slug']) ?> lượt xem
-                                            </div>
-                                            <!-- <div class="text-muted small mt-1">
-                                                <i class="fas fa-info-circle"></i> <?= translateStatus(htmlspecialchars($comic['status'])) ?>
-                                            </div> -->
-                                        </div>
+                                        }
+                                    }
+                                    ?>
+                                </a>
+                                <div class="card-body p-2">
+                                    <h5 class="manga-title" title="<?= htmlspecialchars($comic['name']) ?>"><?= htmlspecialchars($comic['name']) ?></h5>
+                                    <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
+                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
+                                        <span><i class="fas fa-clock"></i> <?= timeAgo($comic['updatedAt'] ?? null) ?></span>
                                     </div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fas fa-eye"></i> <?= getViews($comic['slug']) ?> lượt xem
+                                    </div>
+                                    <!-- <div class="text-muted small mt-1">
+                                        <i class="fas fa-info-circle"></i> <?= translateStatus(htmlspecialchars($comic['status'])) ?>
+                                    </div> -->
                                 </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p class="text-center">Không có dữ liệu để hiển thị.</p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Thanh phân trang -->
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                            <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $page - 1 ?>" aria-label="Previous">
+                                <span aria-hidden="true">« Trước</span>
+                            </a>
+                        </li>
+                        <?php if ($page > 3): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=1">1</a>
+                            </li>
+                            <?php if ($page > 4): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
                         <?php endif; ?>
-                    </div>
-        <?php
-                }
-            }
-        }
-        ?>
+                        <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $totalPages); $i++): ?>
+                            <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                                <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $i ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <?php if ($page < $totalPages - 2): ?>
+                            <?php if ($page < $totalPages - 3): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                            <li class="page-item">
+                                <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                            </li>
+                        <?php endif; ?>
+                        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+                            <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $page + 1 ?>" aria-label="Next">
+                                <span aria-hidden="true">Tiếp »</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
 
     <?php include '../includes/footer.php'; ?>

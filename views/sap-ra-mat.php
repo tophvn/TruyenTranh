@@ -1,10 +1,10 @@
 <?php
 include('../config/database.php');
 $type = 'sap-ra-mat';
-$page = $_GET['page'] ?? 1;
+$page = max(1, (int)($_GET['page'] ?? 1)); // Đảm bảo page không nhỏ hơn 1
 session_start();
 
-$api_url = "https://otruyenapi.com/v1/api/danh-sach/$type?page=$page";
+$api_url = "https://otruyenapi.com/v1/api/danh-sach/{$type}?page={$page}";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $api_url);
@@ -14,7 +14,10 @@ $response = curl_exec($ch);
 curl_close($ch);
 
 $data = json_decode($response, true);
-$truyenList = (isset($data['data']) && !empty($data['data'])) ? $data['data']['items'] : [];
+$truyenList = (isset($data['data']) && !empty($data['data']['items'])) ? $data['data']['items'] : [];
+$totalItems = $data['data']['params']['pagination']['totalItems'] ?? 0;
+$itemsPerPage = $data['data']['params']['pagination']['totalItemsPerPage'] ?? 24;
+$totalPages = ($itemsPerPage > 0) ? ceil($totalItems / $itemsPerPage) : 1;
 
 // Hàm tính khoảng thời gian từ ngày cập nhật đến hiện tại với cắt ngắn nếu cần
 function timeAgo($dateString) {
@@ -30,9 +33,8 @@ function timeAgo($dateString) {
             $text = $interval->y . ' năm trước';
         } elseif ($interval->m > 0) {
             $text = $interval->m . ' tháng trước';
-            // Kiểm tra độ dài chuỗi, nếu quá 10 ký tự thì cắt ngắn
             if (strlen($text) > 10) {
-                $text = $interval->m . ' tháng trư...'; // Giữ "tháng trư..." thay vì cắt giữa từ
+                $text = $interval->m . ' tháng trư...';
             }
         } elseif ($interval->d > 0) {
             $text = $interval->d . ' ngày trước';
@@ -101,12 +103,21 @@ function getViews($slug) {
             border-radius: 3px;
             z-index: 10;
         }
+        .pagination .page-link {
+            color: #00b7eb;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #00b7eb;
+            border-color: #00b7eb;
+            color: #fff;
+        }
     </style>
 </head>
 <body class="dark-mode">
     <?php include '../includes/header.php'; ?>
     <div class="container my-4">
-    <br><br><br><br><h4 class="section-title text-center"><i class="fas fa-clock"></i> DANH SÁCH TRUYỆN SẮP RA MẮT</h4>
+        <br><br><br><br>
+        <h4 class="section-title text-center"><i class="fas fa-clock"></i> DANH SÁCH TRUYỆN SẮP RA MẮT</h4>
         <div class="row g-4 fade-in">
             <?php if (!empty($truyenList)): ?>
                 <?php foreach ($truyenList as $truyen): ?>
@@ -146,22 +157,42 @@ function getViews($slug) {
             <?php endif; ?>
         </div>
 
-        <!-- Thanh chuyển trang -->
-        <div class="pagination justify-content-center mt-4">
-            <ul class="pagination">
-                <li class="page-item <?= ($page == 1) ? 'disabled' : '' ?>">
-                    <a class="page-link" href="?page=<?= ($page - 1) ?>">Trước</a>
+        <!-- Thanh phân trang -->
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="sap-ra-mat.php?page=<?= $page - 1 ?>" aria-label="Previous">
+                        <span aria-hidden="true">« Trước</span>
+                    </a>
                 </li>
-                <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $data['data']['totalPages'] ?? $page + 2); $i++): ?>
+                <?php if ($page > 3): ?>
                     <li class="page-item">
-                        <a class="page-link <?= ($i == $page) ? 'active-page' : '' ?>" href="?page=<?= $i ?>"><?= $i ?></a>
+                        <a class="page-link" href="sap-ra-mat.php?page=1">1</a>
+                    </li>
+                    <?php if ($page > 4): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $totalPages); $i++): ?>
+                    <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                        <a class="page-link" href="sap-ra-mat.php?page=<?= $i ?>"><?= $i ?></a>
                     </li>
                 <?php endfor; ?>
-                <li class="page-item <?= ($page >= ($data['data']['totalPages'] ?? $page)) ? 'disabled' : '' ?>">
-                    <a class="page-link" href="?page=<?= ($page + 1) ?>">Tiếp</a>
+                <?php if ($page < $totalPages - 2): ?>
+                    <?php if ($page < $totalPages - 3): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                    <li class="page-item">
+                        <a class="page-link" href="sap-ra-mat.php?page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                    </li>
+                <?php endif; ?>
+                <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="sap-ra-mat.php?page=<?= $page + 1 ?>" aria-label="Next">
+                        <span aria-hidden="true">Tiếp »</span>
+                    </a>
                 </li>
             </ul>
-        </div>
+        </nav>
     </div>
 
     <?php include '../includes/footer.php'; ?>

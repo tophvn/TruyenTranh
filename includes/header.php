@@ -2,10 +2,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/views';
+// $base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/views';
 
 // Xác định base_url động
-//$base_url = dirname($_SERVER['SCRIPT_NAME'], substr_count($_SERVER['SCRIPT_NAME'], '/') - 1);
+$base_url = dirname($_SERVER['SCRIPT_NAME'], substr_count($_SERVER['SCRIPT_NAME'], '/') - 1);
 
 $api_url = "https://otruyenapi.com/v1/api/the-loai";
 
@@ -141,9 +141,9 @@ function getAvatarPath($avatar) {
             <a href="<?= $base_url ?>/views/hoan-thanh.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Hoàn Thành</a>
             <a href="<?= $base_url ?>/views/dang-phat-hanh.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Đang Phát Hành</a>
             <a href="<?= $base_url ?>/views/sap-ra-mat.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Sắp Ra Mắt</a>
-            <div class="relative group">
-                <a href="#" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Thể Loại</a>
-                <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-xl mt-2 p-3 w-64 max-h-80 overflow-y-auto animate-fade-in">
+            <div class="relative">
+                <a href="#" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline toggle-category">Thể Loại</a>
+                <div class="absolute hidden bg-white text-gray-800 rounded-lg shadow-xl mt-2 p-3 w-64 max-h-80 overflow-y-auto animate-fade-in category-menu">
                     <?php if (!empty($categories)): ?>
                         <?php foreach ($categories as $category): ?>
                             <a href="<?= $base_url ?>/views/truyen-theo-the-loai.php?slug=<?= htmlspecialchars($category['slug']) ?>" class="block px-2 py-1 hover:bg-hover-bg rounded transition-colors duration-300 no-underline">
@@ -230,10 +230,36 @@ function getAvatarPath($avatar) {
                 setTimeout(() => mobileMenu.classList.remove('animate-slide-down'), 300);
             }
         });
-
         document.getElementById('mobile-categories-toggle').addEventListener('click', function(e) {
             e.preventDefault();
             document.getElementById('mobile-categories').classList.toggle('hidden');
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleCategoryButton = document.querySelector('.toggle-category');
+            const categoryMenu = document.querySelector('.category-menu');
+
+            toggleCategoryButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                categoryMenu.classList.toggle('hidden');
+            });
+
+            const toggleUserButton = document.querySelector('.toggle-user-menu');
+            const userMenu = document.querySelector('.user-menu');
+
+            if (toggleUserButton && userMenu) { 
+                toggleUserButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    userMenu.classList.toggle('hidden');
+                });
+            }
+            document.addEventListener('click', function (e) {
+                if (!toggleCategoryButton.contains(e.target) && !categoryMenu.contains(e.target)) {
+                    categoryMenu.classList.add('hidden');
+                }
+                if (toggleUserButton && userMenu && !toggleUserButton.contains(e.target) && !userMenu.contains(e.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -122,7 +122,7 @@ function send_password_reset_email($email, $token) {
         $mail->addAddress($email);
         $mail->isHTML(true);
         $mail->Subject = 'Đặt Lại Mật Khẩu';
-        $resetLink = "http://localhost/TruyenTranh/views/reset_password.php?token=" . $token;
+        $resetLink = "http://localhost/TruyenTranhNet/views/reset_password.php?token=" . $token;
         $mail->Body = "
             <html>
             <head>
