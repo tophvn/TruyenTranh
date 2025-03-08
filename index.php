@@ -5,7 +5,7 @@ session_start();
 $api_url = "https://otruyenapi.com/v1/api/home";
 $isIndexPage = basename($_SERVER['PHP_SELF']) === 'index.php';
 
-// Gọi API home để lấy danh sách truyện
+// Gọi API home để lấy danh sách truyện (cho phần "Truyện Mới Cập Nhật")
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $api_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -16,7 +16,13 @@ curl_close($ch);
 $data = json_decode($response, true);
 $truyenList = (isset($data['data']) && !empty($data['data'])) ? $data['data']['items'] : [];
 
-// Hàm lấy thông tin truyện từ API theo slug (chỉ lấy tên truyện)
+// Tạo mảng để tra cứu nhanh chaptersLatest từ API /home
+$truyenListBySlug = [];
+foreach ($truyenList as $truyen) {
+    $truyenListBySlug[$truyen['slug']] = $truyen;
+}
+
+// Hàm lấy thông tin truyện từ API theo slug
 function getStoryDetails($slug) {
     $api_url = "https://otruyenapi.com/v1/api/truyen-tranh/" . urlencode($slug);
     $ch = curl_init();
@@ -28,10 +34,14 @@ function getStoryDetails($slug) {
     $data = json_decode($response, true);
     if (isset($data['status']) && $data['status'] === 'success' && isset($data['data']['item'])) {
         return [
-            'name' => $data['data']['item']['name']
+            'name' => $data['data']['item']['name'],
+            'thumb_url' => $data['data']['item']['thumb_url'],
+            'chaptersLatest' => $data['data']['item']['chapters_latest'] ?? [],
+            'updatedAt' => $data['data']['item']['updated_at'] ?? null,
+            'category' => $data['data']['item']['category'] ?? []
         ];
     }
-    return ['name' => 'Không tìm thấy'];
+    return ['name' => 'Không tìm thấy', 'thumb_url' => '', 'chaptersLatest' => [], 'updatedAt' => null, 'category' => []];
 }
 
 // Danh sách slug của các truyện bạn muốn hiển thị trong carousel
@@ -41,14 +51,21 @@ foreach ($storySlugs as $slug) {
     $stories[$slug] = getStoryDetails($slug);
 }
 
-// Hàm định dạng thời gian từ API
-function formatDate($dateString) {
+// Hàm tính khoảng thời gian từ ngày cập nhật đến hiện tại
+function timeAgo($dateString) {
     if (empty($dateString) || $dateString === null) {
         return 'N/A';
     }
     try {
-        $date = new DateTime($dateString);
-        return $date->format('d/m/Y H:i');
+        $updateTime = new DateTime($dateString);
+        $currentTime = new DateTime();
+        $interval = $currentTime->diff($updateTime);
+        if ($interval->y > 0) return $interval->y . ' năm trước';
+        elseif ($interval->m > 0) return $interval->m . ' tháng trước';
+        elseif ($interval->d > 0) return $interval->d . ' ngày trước';
+        elseif ($interval->h > 0) return $interval->h . ' giờ trước';
+        elseif ($interval->i > 0) return $interval->i . ' phút trước';
+        else return 'Vừa xong';
     } catch (Exception $e) {
         return 'N/A';
     }
@@ -65,16 +82,33 @@ function getViews($slug) {
     return $result->fetch_assoc()['views'] ?? 0;
 }
 
-// Hàm lấy top truyện xem nhiều nhất từ API, sắp xếp theo views từ CSDL
-function getMostViewedTruyen($truyenList) {
-    foreach ($truyenList as &$truyen) {
-        $truyen['views'] = getViews($truyen['slug']);
+// Hàm lấy top truyện xem nhiều nhất từ cơ sở dữ liệu
+function getMostViewedTruyen() {
+    global $conn, $truyenListBySlug;
+    $query = "SELECT slug, name, thumb_url, updated_at FROM truyen ORDER BY views DESC LIMIT 12";
+    $result = $conn->query($query);
+    $topTruyen = [];
+    while ($row = $result->fetch_assoc()) {
+        $details = getStoryDetails($row['slug']);
+        // Ưu tiên chaptersLatest từ API /home nếu có
+        $chaptersLatest = isset($truyenListBySlug[$row['slug']]['chaptersLatest']) 
+            ? $truyenListBySlug[$row['slug']]['chaptersLatest'] 
+            : $details['chaptersLatest'];
+        // Ưu tiên updatedAt từ API /home nếu có
+        $updatedAt = isset($truyenListBySlug[$row['slug']]['updatedAt']) 
+            ? $truyenListBySlug[$row['slug']]['updatedAt'] 
+            : $row['updated_at'];
+        $topTruyen[] = [
+            'slug' => $row['slug'],
+            'name' => $row['name'],
+            'thumb_url' => $row['thumb_url'],
+            'updatedAt' => $updatedAt,
+            'chaptersLatest' => $chaptersLatest,
+            'category' => $details['category'],
+            'views' => getViews($row['slug'])
+        ];
     }
-    unset($truyen);
-    usort($truyenList, function($a, $b) {
-        return ($b['views'] ?? 0) - ($a['views'] ?? 0);
-    });
-    return array_slice($truyenList, 0, 12);
+    return $topTruyen;
 }
 
 function getTopUsers() {
@@ -85,7 +119,7 @@ function getTopUsers() {
 }
 
 $topUsers = getTopUsers();
-$mostViewedTruyen = getMostViewedTruyen($truyenList);
+$mostViewedTruyen = getMostViewedTruyen();
 $featuredStories = array_slice($truyenList, 0, 5);
 ?>
 
@@ -108,126 +142,89 @@ $featuredStories = array_slice($truyenList, 0, 5);
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
     <style>
-        .premium-carousel {
-            position: relative;
-            overflow: hidden;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        /* CSS cho tag thời gian cập nhật */
+        .update-tag {
+            background-color: #00b7eb;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
         }
 
-        .premium-carousel .carousel-inner {
-            border-radius: 15px;
+        /* Badge 18+ */
+        .badge-18plus {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff0000;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            z-index: 10;
         }
 
-        .premium-carousel .carousel-item {
-            height: 500px;
-            background: linear-gradient(135deg, #1e3a8a, #4c6ef5);
-            transition: transform 0.6s ease, opacity 0.6s ease;
-        }
-
-        .premium-carousel .carousel-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-
-        .premium-carousel .carousel-item:hover img {
-            opacity: 1;
-        }
-
-        .premium-carousel .carousel-caption {
-            text-align: center;
-            bottom: 20px;
-            top: auto;
-            transform: none;
+        /* CSS cho phần Top Xem Nhiều */
+        .top-most-viewed {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
             padding: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 10px;
-            width: 90%;
-            left: 5%;
-            right: 5%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 40px;
+            animation: fadeIn 1s ease-in-out;
         }
 
-        .premium-carousel .carousel-caption h5 {
-            font-size: 2rem;
+        .section-title-top {
+            font-size: 28px;
+            font-weight: bold;
             color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            margin-bottom: 10px;
-            font-style: italic;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        .premium-carousel .btn-xem-thong-tin {
-            background: #3b82f6;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border: none;
-            display: inline-block;
+        /* Hiệu ứng cho top 3 */
+        .vip-card {
+            border: 2px solid #ffd700;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .premium-carousel .btn-xem-thong-tin:hover {
-            background: #2563eb;
+        .vip-card:hover {
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
-        @media (max-width: 768px) {
-            .premium-carousel .carousel-item {
-                height: 300px;
-            }
+        /* Badge xếp hạng */
+        .rank-badge {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 30px;
+            height: 30px;
+            background-color: #ffd700;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
 
-            .premium-carousel .carousel-caption h5 {
-                font-size: 1.5rem;
-            }
-
-            .premium-carousel .carousel-caption {
-                width: 90%;
-                padding: 15px;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
 </head>
-<body><br>
+<body class="dark-mode">
     <?php include 'includes/header.php'; ?>
-
     <div class="container my-4">
-        <?php if ($isIndexPage): ?>
-            <div class="row mb-5 fade-in">
-                <div class="col-12">
-                    <div id="premiumCarousel" class="carousel slide premium-carousel" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            <?php foreach ($storySlugs as $index => $slug): ?>
-                                <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-                                    <img src="img/slide/image<?= $index + 1 ?>.jpg" class="d-block w-100" alt="<?= htmlspecialchars($stories[$slug]['name']) ?>">
-                                    <div class="carousel-caption">
-                                        <h5><?= htmlspecialchars($stories[$slug]['name']) ?></h5>
-                                        <a href="views/truyen-detail.php?slug=<?= urlencode($slug) ?>" class="btn btn-xem-thong-tin">Xem thông tin</a>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#premiumCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#premiumCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
-
         <h4 class="section-title text-center">TRUYỆN TRANH MỚI CẬP NHẬT</h4>
         <div class="row g-4 fade-in">
             <?php if (!empty($truyenList)): ?>
@@ -240,7 +237,6 @@ $featuredStories = array_slice($truyenList, 0, 5);
                                      alt="<?= htmlspecialchars($truyen['name']) ?>" 
                                      loading="lazy">
                                 <?php 
-                                // Kiểm tra thể loại để hiển thị tag "18+"
                                 if (isset($truyen['category']) && is_array($truyen['category'])) {
                                     foreach ($truyen['category'] as $cat) {
                                         if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
@@ -255,7 +251,7 @@ $featuredStories = array_slice($truyenList, 0, 5);
                                 <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
                                 <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
                                     <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                    <span><i class="fas fa-clock"></i> <?= formatDate($truyen['updatedAt'] ?? null) ?></span>
+                                    <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
                                 </div>
                                 <div class="text-muted small mt-1">
                                     <i class="fas fa-eye"></i> <?= getViews($truyen['slug']) ?> lượt xem
@@ -269,73 +265,54 @@ $featuredStories = array_slice($truyenList, 0, 5);
             <?php endif; ?>
         </div>
 
-        <h4 class="section-title text-center mt-5">TOP TRUYỆN ĐƯỢC XEM NHIỀU NHẤT</h4>
-        <div class="row g-4 fade-in">
-            <?php if (!empty($mostViewedTruyen)): ?>
-                <?php foreach ($mostViewedTruyen as $index => $truyen): ?>
-                    <div class="col-6 col-md-4 col-lg-2 mb-4">
-                        <div class="manga-card <?= $index < 3 ? 'vip-card' : '' ?>">
-                            <a href="views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>" class="text-decoration-none position-relative">
-                                <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
-                                     class="card-img-top manga-cover" 
-                                     alt="<?= htmlspecialchars($truyen['name']) ?>" 
-                                     loading="lazy">
-                                <?php 
-                                // Kiểm tra thể loại để hiển thị tag "18+"
-                                if (isset($truyen['category']) && is_array($truyen['category'])) {
-                                    foreach ($truyen['category'] as $cat) {
-                                        if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
-                                            echo '<span class="badge-18plus">18+</span>';
-                                            break;
+        <!-- Phần Top Truyện Được Xem Nhiều Nhất -->
+        <div class="top-most-viewed">
+            <h4 class="section-title-top">TOP TRUYỆN ĐƯỢC XEM NHIỀU NHẤT</h4>
+            <div class="row g-4 fade-in">
+                <?php if (!empty($mostViewedTruyen)): ?>
+                    <?php foreach ($mostViewedTruyen as $index => $truyen): ?>
+                        <div class="col-6 col-md-4 col-lg-2 mb-4">
+                            <div class="manga-card <?= $index < 3 ? 'vip-card' : '' ?>">
+                                <a href="views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>" class="text-decoration-none position-relative">
+                                    <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
+                                         class="card-img-top manga-cover" 
+                                         alt="<?= htmlspecialchars($truyen['name']) ?>" 
+                                         loading="lazy">
+                                    <?php 
+                                    if (isset($truyen['category']) && is_array($truyen['category'])) {
+                                        foreach ($truyen['category'] as $cat) {
+                                            if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
+                                                echo '<span class="badge-18plus">18+</span>';
+                                                break;
+                                            }
                                         }
                                     }
-                                }
-                                ?>
-                            </a>
-                            <div class="card-body p-2">
-                                <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
-                                <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                    <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                    <span><i class="fas fa-clock"></i> <?= formatDate($truyen['updatedAt'] ?? null) ?></span>
-                                </div>
-                                <div class="text-muted small mt-1">
-                                    <i class="fas fa-eye"></i> <?= getViews($truyen['slug']) ?> lượt xem
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-center">Không có truyện được xem nhiều nhất để hiển thị.</p>
-            <?php endif; ?>
-        </div>
-
-        <!-- <h4 class="section-title text-center mt-5">TOP THÀNH VIÊN</h4>
-        <div class="row g-4 fade-in">
-            <?php if (!empty($topUsers)): ?>
-                <?php foreach ($topUsers as $user): ?>
-                    <div class="col-6 col-md-4 col-lg-2 mb-4">
-                        <div class="manga-card user-card">
-                            <div class="card-body text-center p-2">
-                                <img src="<?= htmlspecialchars($user['avatar'] ?? 'default-avatar.png') ?>" 
-                                     alt="<?= htmlspecialchars($user['name']) ?>" 
-                                     loading="lazy">
-                                <h5 class="user-name mt-2" title="<?= htmlspecialchars($user['name'] ?? $user['username']) ?>"><?= htmlspecialchars($user['name'] ?? $user['username']) ?></h5>
-                                <div class="text-muted small mt-1">
-                                    <i class="fas fa-trophy"></i> Điểm: <?= number_format($user['score']) ?>
+                                    if ($index < 3) {
+                                        echo '<span class="rank-badge">' . ($index + 1) . '</span>';
+                                    }
+                                    ?>
+                                </a>
+                                <div class="card-body p-2">
+                                    <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
+                                    <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
+                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
+                                        <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
+                                    </div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fas fa-eye"></i> <?= $truyen['views'] ?> lượt xem
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-center">Không có người dùng nào để hiển thị.</p>
-            <?php endif; ?> -->
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-center">Không có truyện được xem nhiều nhất để hiển thị.</p>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <?php include 'includes/footer.php'; ?>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="js/main.js"></script>

@@ -39,25 +39,37 @@ function saveComicToDatabase($comicData) {
     $updatedAt = isset($comicData['updatedAt']) ? 
         date('Y-m-d H:i:s', strtotime($comicData['updatedAt'])) : null;
 
-    $checkQuery = "SELECT id FROM truyen WHERE slug = ?";
+    $checkQuery = "SELECT id, views, likes FROM truyen WHERE slug = ?";
     $stmt = $conn->prepare($checkQuery);
     $stmt->bind_param("s", $comicData['slug']);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0) {
-        $insertQuery = "INSERT INTO truyen (name, slug, thumb_url, origin_name, status, updated_at, views) VALUES (?, ?, ?, ?, ?, ?, 0)";
+        // Nếu truyện chưa tồn tại, thêm mới với views ban đầu là 0
+        $insertQuery = "INSERT INTO truyen (name, slug, thumb_url, origin_name, status, updated_at, views, likes) VALUES (?, ?, ?, ?, ?, ?, 0, 0)";
         $insertStmt = $conn->prepare($insertQuery);
         $insertStmt->bind_param("ssssss", $comicData['name'], $comicData['slug'], $comicData['thumb_url'], $comicData['origin_name'][0], $comicData['status'], $updatedAt);
         $success = $insertStmt->execute();
         if ($success) {
-            return $conn->insert_id;
+            $truyenId = $conn->insert_id;
+        } else {
+            return false;
         }
-        return false;
     } else {
+        // Nếu truyện đã tồn tại, lấy ID
         $row = $result->fetch_assoc();
-        return $row['id'];
+        $truyenId = $row['id'];
     }
+
+    // Tăng ngẫu nhiên views từ 10 đến 100
+    $randomViews = rand(10, 100);
+    $updateQuery = "UPDATE truyen SET views = views + ? WHERE id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param("ii", $randomViews, $truyenId);
+    $updateStmt->execute();
+
+    return $truyenId;
 }
 
 $truyenId = saveComicToDatabase($comicData);
@@ -103,6 +115,39 @@ function addToFollowing($userId, $truyenId) {
     return ['success' => false, 'message' => 'Truyện đã có trong danh sách theo dõi!'];
 }
 
+// Hàm thêm lượt thích
+function addToLikes($userId, $truyenId) {
+    global $conn;
+
+    if (!$userId || !$truyenId) {
+        return ['success' => false, 'message' => 'Thông tin không hợp lệ'];
+    }
+
+    $checkQuery = "SELECT id FROM likes WHERE user_id = ? AND truyen_id = ?";
+    $stmt = $conn->prepare($checkQuery);
+    $stmt->bind_param("ii", $userId, $truyenId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        $insertQuery = "INSERT INTO likes (user_id, truyen_id) VALUES (?, ?)";
+        $insertStmt = $conn->prepare($insertQuery);
+        $insertStmt->bind_param("ii", $userId, $truyenId);
+        $success = $insertStmt->execute();
+
+        if ($success) {
+            $updateQuery = "UPDATE truyen SET likes = likes + 1 WHERE id = ?";
+            $updateStmt = $conn->prepare($updateQuery);
+            $updateStmt->bind_param("i", $truyenId);
+            $updateStmt->execute();
+            return ['success' => true, 'message' => 'Đã thích truyện!'];
+        } else {
+            return ['success' => false, 'message' => 'Lỗi khi thích: ' . $conn->error];
+        }
+    }
+    return ['success' => false, 'message' => 'Bạn đã thích truyện này rồi!'];
+}
+
 // Xử lý thêm vào danh sách theo dõi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_following'])) {
     if (!isset($_SESSION['user']['user_id'])) {
@@ -115,6 +160,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_following'])) 
     }
     $userId = $_SESSION['user']['user_id'];
     $result = addToFollowing($userId, $truyenId);
+    echo json_encode($result);
+    exit;
+}
+
+// Xử lý thêm lượt thích
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_likes'])) {
+    if (!isset($_SESSION['user']['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích truyện!']);
+        exit;
+    }
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ!']);
+        exit;
+    }
+    $userId = $_SESSION['user']['user_id'];
+    $result = addToLikes($userId, $truyenId);
     echo json_encode($result);
     exit;
 }
@@ -133,17 +194,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_content'])) {
     $userId = $_SESSION['user']['user_id'];
     $content = trim($_POST['comment_content']);
 
-    // Kiểm tra độ dài và nội dung
     if (empty($content)) {
         echo json_encode(['success' => false, 'message' => 'Nội dung bình luận không được để trống!']);
         exit;
     }
-    if (strlen($content) > 1000) { // Giới hạn độ dài
+    if (strlen($content) > 1000) {
         echo json_encode(['success' => false, 'message' => 'Bình luận quá dài (tối đa 1000 ký tự)!']);
         exit;
     }
 
-    // Lọc XSS
     $content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
     $insertQuery = "INSERT INTO comments (user_id, truyen_id, content, created_at) VALUES (?, ?, ?, NOW())";
@@ -168,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_content'])) {
                 'name' => $user['name'],
                 'content' => $content,
                 'avatar' => $avatar,
-                'created_at' => date('d/m/Y H:i') // Thêm thời gian hiện tại
+                'created_at' => date('d/m/Y H:i')
             ]
         ]);
     } else {
@@ -177,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_content'])) {
     exit;
 }
 
-// Lấy danh sách bình luận (name, content, avatar, và created_at)
+// Lấy danh sách bình luận
 function getComments($truyenId) {
     global $conn;
     $query = "SELECT u.name, u.avatar, c.content, c.created_at 
@@ -192,7 +251,32 @@ function getComments($truyenId) {
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+// Lấy thông tin truyện từ database
+function getComicStats($truyenId) {
+    global $conn;
+    $statsQuery = "SELECT views, likes FROM truyen WHERE id = ?";
+    $stmt = $conn->prepare($statsQuery);
+    $stmt->bind_param("i", $truyenId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stats = $result->fetch_assoc();
+
+    $followQuery = "SELECT COUNT(*) as follows FROM yeuthich WHERE truyen_id = ?";
+    $followStmt = $conn->prepare($followQuery);
+    $followStmt->bind_param("i", $truyenId);
+    $followStmt->execute();
+    $followResult = $followStmt->get_result();
+    $follows = $followResult->fetch_assoc()['follows'];
+
+    return [
+        'views' => $stats['views'],
+        'likes' => $stats['likes'],
+        'follows' => $follows
+    ];
+}
+
 $comments = getComments($truyenId);
+$comicStats = getComicStats($truyenId);
 
 // Đề xuất
 $homeApiUrl = "https://otruyenapi.com/v1/api/home";
@@ -224,6 +308,54 @@ if ($homeData && isset($homeData['data']['items'])) {
     <link rel="stylesheet" href="../css/truyen-detail.css">
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .chapter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sort-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        
+        .follow-button, .like-button {
+            background-color: transparent;
+            color: #ff6200;
+            border: 2px solid #ff6200;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .follow-button {
+            background-color: #ff6200;
+            color: white;
+        }
+
+        .like-button {
+            background-color: #ff4444;
+            color: white;
+            border-color: #ff4444;
+        }
+
+        .follow-button:hover {
+            background-color: #e65c00;
+            color: white;
+        }
+
+        .like-button:hover {
+            background-color: #cc0000;
+            color: white;
+        }
+
+        .follow-button i, .like-button i {
+            margin-right: 5px;
+        }
+    </style>
 </head>
 <body>
     <?php include '../includes/header.php' ?>
@@ -238,6 +370,9 @@ if ($homeData && isset($homeData['data']['items'])) {
                         <p><strong>Tên gốc:</strong> <?php echo htmlspecialchars($comicData['origin_name'][0] ?? 'N/A'); ?></p>
                         <p><strong>Trạng thái:</strong> <?php echo htmlspecialchars($comicData['status'] ?? 'N/A'); ?></p>
                         <p><strong>Cập nhật lần cuối:</strong> <?php echo htmlspecialchars(formatDate($comicData['updatedAt'] ?? '')); ?></p>
+                        <p><strong>Lượt thích:</strong> <?php echo $comicStats['likes']; ?></p>
+                        <p><strong>Lượt theo dõi:</strong> <?php echo $comicStats['follows']; ?></p>
+                        <p><strong>Lượt xem:</strong> <?php echo $comicStats['views']; ?></p>
                         <div class="rating">
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
@@ -258,6 +393,9 @@ if ($homeData && isset($homeData['data']['items'])) {
                         <button class="follow-button" title="Thêm vào danh sách theo dõi" id="addToFollowing">
                             <i class="fas fa-bookmark"></i> Theo dõi
                         </button>
+                        <button class="like-button" title="Thích truyện" id="addToLikes">
+                            <i class="fas fa-heart"></i> Thích
+                        </button>
                     </div>
                 </div>
                 
@@ -268,17 +406,22 @@ if ($homeData && isset($homeData['data']['items'])) {
                 </div>
 
                 <div class="chapter-list">
-                    <h2 class="section-title">
-                        <i class="fas fa-star"></i>
-                        DANH SÁCH CHƯƠNG
-                    </h2>
+                    <div class="chapter-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-star"></i>
+                            DANH SÁCH CHƯƠNG
+                        </h2>
+                        <button id="toggleSort" class="sort-btn btn btn-outline-primary" title="Sắp xếp">
+                            <i class="fas fa-sort-amount-down"></i>
+                        </button>
+                    </div>
                     <div class="mb-3 text-center">
                         <div class="d-flex justify-content-center gap-3">
                             <button id="readFirstChapter" class="btn btn-primary w-100 w-md-auto">Đọc Từ Đầu</button>
                             <button id="readLatestChapter" class="btn btn-secondary w-100 w-md-auto">Đọc từ Chapter Mới Nhất</button>
                         </div>
                     </div>
-                    <div class="chapters">
+                    <div class="chapters" id="chapterContainer">
                         <?php
                         $chapters = [];
                         if (isset($comicData['chapters']) && is_array($comicData['chapters'])) {
@@ -307,7 +450,6 @@ if ($homeData && isset($homeData['data']['items'])) {
                     </div>
                 </div>
 
-                <!-- Phần bình luận -->
                 <div class="comment-section">
                     <h3>Bình Luận</h3>
                     <?php if (isset($_SESSION['user']['user_id'])): ?>
@@ -373,26 +515,39 @@ if ($homeData && isset($homeData['data']['items'])) {
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script>
-        function saveChapterToLocalStorage(filename, chapterName, chapterApiData, chapterTitle, storyName, storyLink, storyImage) {
-            let readHistory = JSON.parse(localStorage.getItem('readHistory') || '[]');
-            let chapterExists = readHistory.some(chapter => chapter.filename === filename);
-            if (!chapterExists) {
-                readHistory.push({
-                    filename: filename,
-                    chapter_name: chapterName,
-                    chapter_api_data: chapterApiData,
-                    chapter_title: chapterTitle,
-                    chapter_story_name: storyName,
-                    chapter_link: storyLink,
-                    chapter_image: storyImage
-                });
-                localStorage.setItem('readHistory', JSON.stringify(readHistory));
+        let chapters = <?php echo json_encode($chapters); ?>;
+        let isSortDesc = true; // Mặc định từ mới đến cũ
+
+        function renderChapters() {
+            let sortedChapters = [...chapters];
+            if (isSortDesc) {
+                sortedChapters.sort((a, b) => parseFloat(b.name) - parseFloat(a.name));
+            } else {
+                sortedChapters.sort((a, b) => parseFloat(a.name) - parseFloat(b.name));
             }
+
+            const container = $('#chapterContainer');
+            container.empty();
+            if (sortedChapters.length === 0) {
+                container.append('<p>Không có chương nào để hiển thị.</p>');
+                return;
+            }
+
+            sortedChapters.forEach(chapter => {
+                const encodedChapterUrl = btoa(chapter.url);
+                const chapterHtml = `
+                    <div class="chapter-item" data-chapter-url="${encodedChapterUrl}">
+                        <span class="chapter-name">Chương ${chapter.name}</span>
+                        <span class="chapter-details">Đang update - 0 lượt xem - 0 bình luận</span>
+                    </div>`;
+                container.append(chapterHtml);
+            });
         }
 
-        let chapters = <?php echo json_encode($chapters); ?>;
-
         $(document).ready(function() {
+            // Khởi tạo danh sách chương
+            renderChapters();
+
             // Xử lý gửi bình luận
             $('#commentForm').on('submit', function(e) {
                 e.preventDefault();
@@ -416,10 +571,9 @@ if ($homeData && isset($homeData['data']['items'])) {
                                         </div>
                                         <span class="comment-content">${response.comment.content}</span>
                                     </div>
-                                </div>
-                            `;
-                            $('.comment-list').prepend(newComment); // Thêm vào đầu danh sách
-                            $('textarea[name="comment_content"]').val(''); // Xóa nội dung textarea
+                                </div>`;
+                            $('.comment-list').prepend(newComment);
+                            $('textarea[name="comment_content"]').val('');
                         }
                     },
                     error: function() {
@@ -429,18 +583,9 @@ if ($homeData && isset($homeData['data']['items'])) {
             });
 
             // Xử lý click vào chapter
-            $('.chapter-item').on('click', function() {
+            $('#chapterContainer').on('click', '.chapter-item', function() {
                 let encodedChapterUrl = $(this).data('chapter-url');
-                let chapterName = $(this).find('.chapter-name').text();
-                let filename = chapterName.replace('Chương ', '').split(':')[0].trim();
-                let chapterTitle = 'Tiêu đề của chương ' + filename;
-                let storyName = "<?php echo htmlspecialchars($comicData['name']); ?>";
                 let storySlug = "<?php echo htmlspecialchars($comicData['slug']); ?>";
-                let storyLink = "truyen-detail.php?slug=" + storySlug;
-                let storyImage = "https://img.otruyenapi.com/uploads/comics/<?php echo htmlspecialchars($comicData['thumb_url']); ?>";
-
-                let chapterUrl = atob(encodedChapterUrl);
-                saveChapterToLocalStorage(filename, chapterName, chapterUrl, chapterTitle, storyName, storyLink, storyImage);
                 window.location.href = `doc-truyen.php?chapter_url=${encodeURIComponent(encodedChapterUrl)}&story_slug=${encodeURIComponent(storySlug)}`;
             });
 
@@ -467,11 +612,47 @@ if ($homeData && isset($homeData['data']['items'])) {
                     success: function(data) {
                         const response = JSON.parse(data);
                         alert(response.message);
+                        if (response.success) {
+                            let currentFollows = parseInt($('p:contains("Lượt theo dõi")').text().match(/\d+/)[0]);
+                            $('p:contains("Lượt theo dõi")').html(`<strong>Lượt theo dõi:</strong> ${currentFollows + 1}`);
+                        }
                     },
                     error: function() {
                         alert('Có lỗi xảy ra khi thêm vào danh sách theo dõi.');
                     }
                 });
+            });
+
+            // Thêm lượt thích
+            $('#addToLikes').on('click', function() {
+                let csrfToken = $('input[name="csrf_token"]').val();
+                $.post({
+                    url: '', 
+                    data: { add_to_likes: true, csrf_token: csrfToken },
+                    success: function(data) {
+                        const response = JSON.parse(data);
+                        alert(response.message);
+                        if (response.success) {
+                            let currentLikes = parseInt($('p:contains("Lượt thích")').text().match(/\d+/)[0]);
+                            $('p:contains("Lượt thích")').html(`<strong>Lượt thích:</strong> ${currentLikes + 1}`);
+                        }
+                    },
+                    error: function() {
+                        alert('Có lỗi xảy ra khi thích truyện.');
+                    }
+                });
+            });
+
+            // Toggle sort
+            $('#toggleSort').on('click', function() {
+                isSortDesc = !isSortDesc;
+                const icon = $(this).find('i');
+                if (isSortDesc) {
+                    icon.removeClass('fa-sort-amount-up').addClass('fa-sort-amount-down');
+                } else {
+                    icon.removeClass('fa-sort-amount-down').addClass('fa-sort-amount-up');
+                }
+                renderChapters();
             });
         });
     </script>

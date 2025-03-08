@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Ảnh đại diện không được vượt quá 2MB.";
         } else {
             // Upload ảnh lên Imgbb API
-            $apiKey = '31218a21d09a44bf72b6cae6f7294940';  // Thay bằng API key của bạn
+            $apiKey = '643885b88cdae3183c2ddd0e9ae4b5bc';  // Thay bằng API key của bạn
             $imageData = base64_encode(file_get_contents($avatar['tmp_name']));
             
             $url = 'https://api.imgbb.com/1/upload?key=' . $apiKey;

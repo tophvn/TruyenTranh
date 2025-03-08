@@ -3,10 +3,9 @@ include('../config/database.php');
 $type = 'hoan-thanh';
 $page = $_GET['page'] ?? 1;
 session_start();
-// Đặt URL của API từ Otruyen API với tham số loại truyện và số trang
+
 $api_url = "https://otruyenapi.com/v1/api/danh-sach/$type?page=$page";
 
-// Sử dụng cURL để gọi API
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $api_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -14,24 +13,38 @@ curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 $response = curl_exec($ch);
 curl_close($ch);
 
-// Chuyển đổi dữ liệu JSON từ API thành mảng PHP
 $data = json_decode($response, true);
+$truyenList = (isset($data['data']) && !empty($data['data'])) ? $data['data']['items'] : [];
 
-// Kiểm tra dữ liệu trả về có hợp lệ không
-if (isset($data['data']) && !empty($data['data'])) {
-    $truyenList = $data['data']['items'];
-} else {
-    $truyenList = [];
-}
-
-// Hàm định dạng thời gian
-function formatDate($dateString) {
+// Hàm tính khoảng thời gian từ ngày cập nhật đến hiện tại với cắt ngắn nếu cần
+function timeAgo($dateString) {
     if (empty($dateString) || $dateString === null) {
         return 'N/A';
     }
     try {
-        $date = new DateTime($dateString);
-        return $date->format('d/m/Y H:i');
+        $updateTime = new DateTime($dateString);
+        $currentTime = new DateTime();
+        $interval = $currentTime->diff($updateTime);
+        
+        if ($interval->y > 0) {
+            $text = $interval->y . ' năm trước';
+        } elseif ($interval->m > 0) {
+            $text = $interval->m . ' tháng trước';
+            // Kiểm tra độ dài chuỗi, nếu quá 10 ký tự thì cắt ngắn
+            if (strlen($text) > 10) {
+                $text = substr($text, 0, 7) . '...';
+            }
+        } elseif ($interval->d > 0) {
+            $text = $interval->d . ' ngày trước';
+        } elseif ($interval->h > 0) {
+            $text = $interval->h . ' giờ trước';
+        } elseif ($interval->i > 0) {
+            $text = $interval->i . ' phút trước';
+        } else {
+            $text = 'Vừa xong';
+        }
+        
+        return $text;
     } catch (Exception $e) {
         return 'N/A';
     }
@@ -54,77 +67,106 @@ function getViews($slug) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="truyện tranh, manga, manhwa, manhua, đọc truyện miễn phí, TRUYENTRANHNET">
+    <meta name="description" content="Danh sách truyện tranh hoàn thành tại TRUYENTRANHNET. Đọc manga, manhwa, manhua miễn phí.">
+    <meta property="og:title" content="TRUYENTRANHNET - Danh Sách Truyện Hoàn Thành">
+    <meta property="og:description" content="Danh sách truyện tranh hoàn thành tại TRUYENTRANHNET. Đọc manga, manhwa, manhua miễn phí.">
+    <meta property="og:image" content="https://www.truyentranhnet.com/img/logo.png">
+    <meta property="og:url" content="https://www.truyentranhnet.com/hoan-thanh">
+    <meta name="robots" content="index, follow">
     <link href="../img/logo.png" rel="icon">
-    <title>Danh Sách Truyện - Hoàn Thành</title>
+    <title>TRUYENTRANHNET - Danh Sách Truyện Hoàn Thành</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/main.css">
+    <style>
+        .update-tag {
+            background-color: #00b7eb;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .badge-18plus {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff0000;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            z-index: 10;
+        }
+    </style>
 </head>
-<body>
-    <?php include '../includes/header.php' ?>
-    <div class="container mt-4">
-        <div class="section-wrapper">
-            <h4 class="section-title"><i class="fas fa-check-circle"></i> Danh Sách Truyện - Hoàn Thành</h4>
-            <div class="row g-3">
-                <?php if (!empty($truyenList)): ?>
-                    <?php foreach ($truyenList as $truyen): ?>
-                        <div class="col-6 col-md-4 col-lg-2 mb-4">
-                            <div class="manga-card">
-                                <a href="truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>" class="text-decoration-none position-relative">
-                                    <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
-                                         class="card-img-top manga-cover" 
-                                         alt="<?= htmlspecialchars($truyen['name']) ?>" 
-                                         loading="lazy">
-                                    <?php 
-                                    if (isset($truyen['category']) && is_array($truyen['category'])) {
-                                        foreach ($truyen['category'] as $cat) {
-                                            if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
-                                                echo '<span class="badge-18plus">18+</span>';
-                                                break;
-                                            }
+<body class="dark-mode">
+    <?php include '../includes/header.php'; ?>
+    <div class="container my-4">
+    <br><br><br><br><h4 class="section-title text-center"><i class="fas fa-check-circle"></i> DANH SÁCH TRUYỆN HOÀN THÀNH</h4>
+        <div class="row g-4 fade-in">
+            <?php if (!empty($truyenList)): ?>
+                <?php foreach ($truyenList as $truyen): ?>
+                    <div class="col-6 col-md-4 col-lg-2 mb-4">
+                        <div class="manga-card">
+                            <a href="../views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>" class="text-decoration-none position-relative">
+                                <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
+                                     class="card-img-top manga-cover" 
+                                     alt="<?= htmlspecialchars($truyen['name']) ?>" 
+                                     loading="lazy">
+                                <?php 
+                                if (isset($truyen['category']) && is_array($truyen['category'])) {
+                                    foreach ($truyen['category'] as $cat) {
+                                        if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
+                                            echo '<span class="badge-18plus">18+</span>';
+                                            break;
                                         }
                                     }
-                                    ?>
-                                </a>
-                                <div class="card-body p-2">
-                                    <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
-                                    <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                        <span><i class="fas fa-clock"></i> <?= formatDate($truyen['updatedAt'] ?? null) ?></span>
-                                    </div>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fas fa-eye"></i> <?= getViews($truyen['slug']) ?> lượt xem
-                                    </div>
+                                }
+                                ?>
+                            </a>
+                            <div class="card-body p-2">
+                                <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
+                                <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
+                                    <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
+                                    <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    <i class="fas fa-eye"></i> <?= getViews($truyen['slug']) ?> lượt xem
                                 </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-center">Không có dữ liệu truyện để hiển thị.</p>
-                <?php endif; ?>
-            </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p class="text-center">Không có dữ liệu truyện để hiển thị.</p>
+            <?php endif; ?>
+        </div>
 
-            <!-- Thanh chuyển trang -->
-            <div class="pagination justify-content-center mt-4">
-                <ul class="pagination">
-                    <li class="page-item <?= ($page == 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= ($page - 1) ?>">Trước</a>
+        <!-- Thanh chuyển trang -->
+        <div class="pagination justify-content-center mt-4">
+            <ul class="pagination">
+                <li class="page-item <?= ($page == 1) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=<?= ($page - 1) ?>">Trước</a>
+                </li>
+                <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $data['data']['totalPages'] ?? $page + 2); $i++): ?>
+                    <li class="page-item">
+                        <a class="page-link <?= ($i == $page) ? 'active-page' : '' ?>" href="?page=<?= $i ?>"><?= $i ?></a>
                     </li>
-                    <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $data['data']['totalPages'] ?? $page + 2); $i++): ?>
-                        <li class="page-item">
-                            <a class="page-link <?= ($i == $page) ? 'active-page' : '' ?>" href="?page=<?= $i ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?= ($page >= ($data['data']['totalPages'] ?? $page)) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= ($page + 1) ?>">Tiếp</a>
-                    </li>
-                </ul>
-            </div>
+                <?php endfor; ?>
+                <li class="page-item <?= ($page >= ($data['data']['totalPages'] ?? $page)) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=<?= ($page + 1) ?>">Tiếp</a>
+                </li>
+            </ul>
         </div>
     </div>
 
-    <?php include '../includes/footer.php' ?>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+    <?php include '../includes/footer.php'; ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="../js/main.js"></script>
 </body>
 </html>

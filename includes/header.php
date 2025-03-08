@@ -2,14 +2,14 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-//$base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/views';
+$base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/views';
 
-// Lấy đường dẫn tương đối từ thư mục gốc
-$base_url = dirname($_SERVER['SCRIPT_NAME'], substr_count($_SERVER['SCRIPT_NAME'], '/') - 1);
+// Xác định base_url động
+//$base_url = dirname($_SERVER['SCRIPT_NAME'], substr_count($_SERVER['SCRIPT_NAME'], '/') - 1);
 
 $api_url = "https://otruyenapi.com/v1/api/the-loai";
 
-// Sử dụng cURL để gọi API
+// Gọi API bằng cURL
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $api_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -17,17 +17,33 @@ curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 $response = curl_exec($ch);
 curl_close($ch);
 
-// Chuyển đổi dữ liệu JSON thành mảng PHP
+// Xử lý dữ liệu JSON
 $data = json_decode($response, true);
+$categories = (isset($data['data']) && !empty($data['data']['items'])) 
+    ? $data['data']['items'] 
+    : [];
 
-// Kiểm tra dữ liệu trả về có hợp lệ không
-if (isset($data['data']) && !empty($data['data']['items'])) {
-    $categories = $data['data']['items']; // Lấy danh sách thể loại truyện
-} else {
-    $categories = []; // Nếu không có dữ liệu, trả về mảng trống
+// Logic cho carousel
+$isIndexPage = basename($_SERVER['PHP_SELF']) === 'index.php';
+$storySlugs = ['cau-lac-bo-sieu-cap-ve-nha', 'chainsawman-phan-2', 'ruri-dragon', 'dai-chien-nguoi-khong-lo'];
+$stories = [];
+foreach ($storySlugs as $slug) {
+    $api_url_story = "https://otruyenapi.com/v1/api/truyen-tranh/" . urlencode($slug);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $api_url_story);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($response, true);
+    if (isset($data['status']) && $data['status'] === 'success' && isset($data['data']['item'])) {
+        $stories[$slug] = ['name' => $data['data']['item']['name']];
+    } else {
+        $stories[$slug] = ['name' => 'Không tìm thấy'];
+    }
 }
 
-// Hàm để xử lý đường dẫn avatar
+// Hàm hỗ trợ
 function getAvatarPath($avatar) {
     return ltrim($avatar, '../');
 }
@@ -39,561 +55,187 @@ function getAvatarPath($avatar) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRUYENTRANHNET</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <!-- CSS trực tiếp -->
-    <style>
-        /* Reset mặc định */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f8fafc;
-            color: #2d3748;
-            line-height: 1.6;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 12px 20px;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .header-brand {
-            font-size: 1.8rem;
-            color: #fef08a;
-            text-decoration: none;
-            font-weight: 700;
-            letter-spacing: 1px;
-            transition: color 0.3s ease;
-        }
-
-        .header-brand:hover {
-            color: #fff;
-        }
-
-        .hamburger-btn {
-            display: none;
-            font-size: 1.6rem;
-            color: #fef08a;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .nav-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-        }
-
-        .search-bar {
-            display: flex;
-            align-items: center;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .search-bar input {
-            border: none;
-            padding: 10px 15px;
-            border-radius: 25px 0 0 25px;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            font-size: 0.95rem;
-            width: 200px;
-            transition: width 0.3s ease;
-        }
-
-        .search-bar input:focus {
-            width: 250px;
-            outline: none;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-bar button {
-            border: none;
-            padding: 10px 15px;
-            border-radius: 0 25px 25px 0;
-            background: #ef4444;
-            color: #fff;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .search-bar button:hover {
-            background: #dc2626;
-        }
-
-        .user-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-left: auto;
-        }
-
-        .user-actions .dropdown-toggle {
-            color: #fff;
-            text-decoration: none;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            font-size: 0.95rem;
-            transition: background 0.3s ease;
-        }
-
-        .user-actions .dropdown-toggle img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            margin-right: 8px;
-            border: 2px solid #fef08a;
-        }
-
-        .user-actions .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-            min-width: 180px;
-            padding: 5px 0;
-        }
-
-        .user-actions .dropdown:hover .dropdown-menu {
-            display: block;
-        }
-
-        .user-actions .dropdown-item {
-            padding: 8px 15px;
-            color: #1e3a8a;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .user-actions .dropdown-item:hover {
-            background: #3b82f6;
-            color: #fff;
-        }
-
-        .user-actions .login-btn,
-        .user-actions .register-btn {
-            background: #fef08a;
-            color: #1e3a8a;
-            padding: 8px 15px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .user-actions .login-btn:hover,
-        .user-actions .register-btn:hover {
-            background: #facc15;
-            color: #1e3a8a;
-        }
-
-        /* Genre Navigation */
-        .genre-nav {
-            background: #fff;
-            padding: 15px 0;
-            margin-top: 70px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            display: block; /* Đảm bảo hiển thị mặc định */
-        }
-
-        .nav {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            list-style: none; /* Loại bỏ dấu chấm đầu dòng */
-        }
-
-        .nav-link {
-            color: #1e3a8a !important;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: #e0f2fe;
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: inline-block; /* Đảm bảo hiển thị đúng */
-        }
-
-        .nav-link:hover {
-            background: #3b82f6;
-            color: #fff !important;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .dropdown {
-            position: relative;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            left: auto;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-            padding: 10px;
-            width: 600px;
-            max-height: 300px;
-            overflow-y: auto;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            z-index: 1000;
-        }
-
-        .dropdown-item {
-            padding: 8px 12px;
-            color: #1e3a8a;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            text-align: center;
-            border-radius: 6px;
-        }
-
-        .dropdown-item:hover {
-            background: #3b82f6;
-            color: #fff;
-        }
-
-        marquee {
-            background: #fef08a;
-            color: #1e3a8a;
-            padding: 8px;
-            font-weight: 500;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-
-        /* Mobile Navigation trong hamburger */
-        .mobile-nav {
-            display: none;
-            list-style: none; /* Loại bỏ dấu chấm đầu dòng */
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .header {
-                padding: 10px 15px;
-            }
-
-            .header-brand {
-                font-size: 1.5rem;
-            }
-
-            .hamburger-btn {
-                display: block;
-            }
-
-            .nav-container {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background: #1e3a8a;
-                padding: 20px; /* Tăng padding để trông chuyên nghiệp hơn */
-                flex-direction: column;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-                border-radius: 0 0 10px 10px;
-                z-index: 999;
-                text-align: center; /* Căn giữa nội dung */
-            }
-
-            .header.active .nav-container {
-                display: flex;
-            }
-
-            .search-bar {
-                position: static;
-                transform: none;
-                width: 100%;
-                margin-bottom: 15px;
-                justify-content: center; /* Căn giữa thanh tìm kiếm */
-            }
-
-            .search-bar input {
-                width: 80%;
-                border-radius: 25px 0 0 25px;
-                margin-bottom: 0;
-                padding: 12px 15px; /* Tăng padding cho đẹp */
-            }
-
-            .search-bar button {
-                border-radius: 0 25px 25px 0;
-                padding: 12px 15px; /* Tăng padding cho đồng đều */
-            }
-
-            .user-actions {
-                display: none;
-                flex-direction: column;
-                width: 100%;
-                gap: 10px;
-                margin-left: 0;
-                margin-top: 15px; /* Thêm khoảng cách trên */
-            }
-
-            .header.active .user-actions {
-                display: flex;
-            }
-
-            .user-actions .dropdown-toggle,
-            .user-actions .login-btn,
-            .user-actions .register-btn {
-                width: 80%;
-                margin: 0 auto; /* Căn giữa */
-                text-align: center;
-                justify-content: center;
-                background: #3b82f6;
-                color: #fff;
-                border-radius: 25px; /* Bo góc tròn hơn */
-                padding: 12px 20px; /* Tăng padding cho đẹp */
-                transition: all 0.3s ease;
-            }
-
-            .user-actions .login-btn,
-            .user-actions .register-btn {
-                background: #fef08a;
-                color: #1e3a8a;
-            }
-
-            .user-actions .dropdown-toggle:hover,
-            .user-actions .login-btn:hover,
-            .user-actions .register-btn:hover {
-                background: #2563eb; /* Màu hover đẹp hơn */
-                color: #fff;
-            }
-
-            .user-actions .dropdown-menu {
-                display: none;
-                position: static;
-                width: 80%;
-                margin: 0 auto;
-                box-shadow: none;
-                border-radius: 10px;
-                background: #2563eb;
-            }
-
-            .user-actions .dropdown:hover .dropdown-menu {
-                display: block;
-            }
-
-            .user-actions .dropdown-item {
-                color: #fff;
-                text-align: center;
-                padding: 10px 15px;
-                border-radius: 5px;
-            }
-
-            .user-actions .dropdown-item:hover {
-                background: #1e3a8a;
-            }
-
-            /* Ẩn .genre-nav khi hamburger mở */
-            .header.active + .genre-nav {
-                display: none;
-            }
-
-            .mobile-nav {
-                display: none;
-                flex-direction: column;
-                align-items: center; /* Căn giữa các nút */
-                gap: 10px; /* Khoảng cách đều hơn */
-                width: 80%; /* Giới hạn chiều rộng */
-                margin: 15px auto 0; /* Căn giữa và thêm khoảng cách trên */
-                padding: 0; /* Loại bỏ padding thừa */
-            }
-
-            .header.active .mobile-nav {
-                display: flex;
-            }
-
-            .mobile-nav .nav-item {
-                width: 100%;
-            }
-
-            .mobile-nav .nav-link {
-                background: #3b82f6;
-                color: #fff !important;
-                padding: 12px 20px;
-                border-radius: 25px; /* Bo góc tròn hơn */
-                width: 100%;
-                text-align: center;
-                display: block;
-                transition: all 0.3s ease; /* Thêm hiệu ứng mượt */
-                font-weight: 600; /* Chữ đậm hơn */
-            }
-
-            .mobile-nav .nav-link:hover {
-                background: #2563eb;
-                transform: translateY(-2px); /* Hiệu ứng nhấc lên */
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ */
-            }
-
-            .mobile-nav .dropdown-menu {
-                display: none;
-                position: static;
-                width: 100%;
-                background: #2563eb;
-                box-shadow: none;
-                border-radius: 10px;
-                padding: 5px 0;
-                margin-top: 5px; /* Khoảng cách với nút THỂ LOẠI */
-            }
-
-            .mobile-nav .dropdown:hover .dropdown-menu {
-                display: block;
-            }
-
-            .mobile-nav .dropdown-item {
-                color: #fff;
-                padding: 10px 20px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                text-align: center;
-                border-radius: 5px;
-                transition: all 0.3s ease;
-            }
-
-            .mobile-nav .dropdown-item:hover {
-                background: #1e3a8a;
-                transform: translateX(5px); /* Hiệu ứng trượt sang phải */
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#2a2e8a',
+                        'button-primary': '#4CAF50',
+                        'button-hover': '#45a049',
+                        'accent': '#ffffff',
+                        'hover-bg': '#e0e7ff',
+                        'button-glow': '#80e27e',
+                    },
+                    animation: {
+                        'slide-down': 'slide-down 0.3s ease-out',
+                        'fade-in': 'fade-in 0.2s ease-in-out',
+                        'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+                    },
+                    keyframes: {
+                        'slide-down': {
+                            '0%': { transform: 'translateY(-100%)', opacity: 0 },
+                            '100%': { transform: 'translateY(0)', opacity: 1 },
+                        },
+                        'fade-in': {
+                            '0%': { opacity: 0 },
+                            '100%': { opacity: 1 },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(128, 226, 126, 0.3)' },
+                            '50%': { boxShadow: "0 0 15px rgba(128, 226, 126, 0.7)" },
+                        },
+                    },
+                }
             }
         }
-    </style>
+    </script>
 </head>
-<body>
-<header class="header">
-    <div class="container d-flex align-items-center justify-content-between w-100">
-        <a class="header-brand text-warning fw-bold" href="<?= $base_url; ?>/index.php">TRUYENTRANHNET</a>
-        <button class="hamburger-btn"><i class="fas fa-bars"></i></button>
-        <div class="nav-container">
-            <form method="GET" action="<?= $base_url; ?>/views/tim-kiem.php" class="search-bar">
-                <input type="text" name="keyword" placeholder="Tìm kiếm truyện..." required>
-                <button type="submit"><i class="fas fa-search"></i></button>
-            </form>
-            <!-- Thêm menu mobile vào hamburger -->
-            <ul class="mobile-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $base_url; ?>/views/truyen-moi.php">TRUYỆN MỚI</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $base_url; ?>/views/dang-phat-hanh.php">ĐANG PHÁT HÀNH</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $base_url; ?>/views/hoan-thanh.php">HOÀN THÀNH</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $base_url; ?>/views/sap-ra-mat.php">SẮP RA MẮT</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMobile" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        THỂ LOẠI
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMobile">
-                        <?php if (!empty($categories)): ?>
-                            <?php foreach ($categories as $category): ?>
-                                <li><a class="dropdown-item" href="<?= $base_url; ?>/views/truyen-theo-the-loai.php?slug=<?= htmlspecialchars($category['slug']); ?>"><?= htmlspecialchars($category['name']); ?></a></li>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <li><a class="dropdown-item" href="#">Không có thể loại</a></li>
-                        <?php endif; ?>
-                    </ul>
-                </li>
-            </ul>
-            <div class="user-actions">
-                <?php if (isset($_SESSION['user']['user_id'])): ?>
-                    <div class="dropdown">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="<?= !empty($_SESSION['user']['avatar']) ? htmlspecialchars($_SESSION['user']['avatar']) : '../img/default-avatar.jpg'; ?>" alt="Avatar" class="rounded-circle">
-                            <?= htmlspecialchars($_SESSION['user']['name']); ?>
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                            <li><a class="dropdown-item" href="<?= $base_url; ?>/views/tai-khoan.php">Tài khoản</a></li>
-                            <li><a class="dropdown-item" href="<?= $base_url; ?>/views/following.php">Theo dõi</a></li>
-                            <li><a class="dropdown-item" href="<?= $base_url; ?>/views/lich-su-doc.php">Lịch sử đọc</a></li>
-                            <li><a class="dropdown-item text-danger" href="<?= $base_url; ?>/views/logout.php">Đăng xuất</a></li>
-                        </ul>
-                    </div>
-                <?php else: ?>
-                    <a href="<?= $base_url; ?>/views/login.php" class="login-btn">Đăng nhập</a>
-                    <a href="<?= $base_url; ?>/views/register.php" class="register-btn">Đăng ký</a>
-                <?php endif; ?>
+<body class="bg-gray-50 font-['Inter'] pt-16 lg:pt-20">
+    <!-- Header Chính -->
+    <header class="bg-gradient-to-r from-primary via-purple-800 to-teal-700 text-accent fixed w-full top-0 z-50 shadow-lg py-2">
+        <div class="max-w-6xl mx-auto px-4 flex items-center justify-between pt-1">
+            <a href="<?= $base_url ?>/index.php" class="flex items-center space-x-2 group no-underline">
+                <i class="fas fa-book-open text-button-primary text-2xl transition-transform group-hover:scale-110 duration-300"></i>
+                <span class="text-2xl font-bold tracking-wide text-accent group-hover:text-button-primary transition-colors duration-300">TRUYENTRANHNET</span>
+            </a>
+            <button id="hamburger" class="lg:hidden text-2xl focus:outline-none hover:text-button-primary transition-colors duration-300">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div id="nav-menu" class="hidden lg:flex items-center space-x-6">
+                <form method="GET" action="<?= $base_url ?>/views/tim-kiem.php" class="flex">
+                    <input type="text" name="keyword" placeholder="Tìm kiếm..." required class="px-3 py-1 rounded-l-lg border-none text-gray-700 focus:ring-2 focus:ring-button-primary w-48 transition-all duration-300">
+                    <button type="submit" class="bg-button-primary px-3 py-1 rounded-r-lg hover:bg-button-hover text-white transition-all duration-300 animate-pulse-glow">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <div class="flex items-center space-x-3">
+                    <?php if (isset($_SESSION['user']['user_id'])): ?>
+                        <div class="relative group">
+                            <a href="#" class="flex items-center space-x-2 no-underline">
+                                <img src="<?= !empty($_SESSION['user']['avatar']) ? htmlspecialchars($_SESSION['user']['avatar']) : '../img/default-avatar.jpg' ?>" alt="Avatar" class="w-8 h-8 rounded-full border-2 border-button-primary transition-transform hover:scale-105 duration-300">
+                            </a>
+                            <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-xl mt-2 right-0 p-2 w-48 animate-fade-in">
+                                <a href="<?= $base_url ?>/views/tai-khoan.php" class="block px-2 py-1 hover:bg-hover-bg rounded transition-colors duration-300 no-underline">Tài khoản</a>
+                                <a href="<?= $base_url ?>/views/following.php" class="block px-2 py-1 hover:bg-hover-bg rounded transition-colors duration-300 no-underline">Theo dõi</a>
+                                <a href="<?= $base_url ?>/views/lich-su-doc.php" class="block px-2 py-1 hover:bg-hover-bg rounded transition-colors duration-300 no-underline">Lịch sử đọc</a>
+                                <a href="<?= $base_url ?>/views/logout.php" class="block px-2 py-1 hover:bg-red-100 rounded text-red-600 transition-colors duration-300 no-underline">Đăng xuất</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <a href="<?= $base_url ?>/views/login.php" class="bg-button-primary px-3 py-1 rounded-lg hover:bg-button-hover text-white font-medium transition-all duration-300 animate-pulse-glow no-underline">Đăng nhập</a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
-    </div>
-</header>
+    </header>
 
-<div class="genre-nav py-2" style="margin-top: 70px;">
-    <div class="container">
-        <marquee style="color: red;">
-            TRUYENTRANHNET BY TOPH. ĐỌC TRUYỆN MIỄN PHÍ KHÔNG QUẢNG CÁO, TRUYỆN TRANH CẬP NHẬT 24/7.
-        </marquee>
-        <ul class="nav">
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $base_url; ?>/views/truyen-moi.php">TRUYỆN MỚI</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $base_url; ?>/views/dang-phat-hanh.php">ĐANG PHÁT HÀNH</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $base_url; ?>/views/hoan-thanh.php">HOÀN THÀNH</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $base_url; ?>/views/sap-ra-mat.php">SẮP RA MẮT</a>
-            </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    THỂ LOẠI
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+    <!-- Thanh Menu Phụ -->
+    <nav class="bg-white shadow-md fixed w-full top-12 z-40 hidden lg:block">
+        <div class="max-w-6xl mx-auto px-4 py-1 flex items-center justify-center space-x-6 pt-1">
+            <a href="<?= $base_url ?>/views/truyen-moi.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Truyện Mới</a>
+            <a href="<?= $base_url ?>/views/hoan-thanh.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Hoàn Thành</a>
+            <a href="<?= $base_url ?>/views/dang-phat-hanh.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Đang Phát Hành</a>
+            <a href="<?= $base_url ?>/views/sap-ra-mat.php" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Sắp Ra Mắt</a>
+            <div class="relative group">
+                <a href="#" class="text-lg font-medium text-purple-900 hover:text-button-primary transition-all duration-300 hover:scale-105 no-underline">Thể Loại</a>
+                <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-xl mt-2 p-3 w-64 max-h-80 overflow-y-auto animate-fade-in">
                     <?php if (!empty($categories)): ?>
                         <?php foreach ($categories as $category): ?>
-                            <li><a class="dropdown-item" href="<?= $base_url; ?>/views/truyen-theo-the-loai.php?slug=<?= htmlspecialchars($category['slug']); ?>"><?= htmlspecialchars($category['name']); ?></a></li>
+                            <a href="<?= $base_url ?>/views/truyen-theo-the-loai.php?slug=<?= htmlspecialchars($category['slug']) ?>" class="block px-2 py-1 hover:bg-hover-bg rounded transition-colors duration-300 no-underline">
+                                <?= htmlspecialchars($category['name']) ?>
+                            </a>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <li><a class="dropdown-item" href="#">Không có thể loại</a></li>
+                        <a href="#" class="block px-2 py-1 text-gray-500 no-underline">Không có thể loại</a>
                     <?php endif; ?>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</div>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-<script>
-    document.querySelector('.hamburger-btn').addEventListener('click', function() {
-        document.querySelector('.header').classList.toggle('active');
-    });
-</script>
+    <!-- Carousel -->
+    <?php if ($isIndexPage): ?>
+        <div class="max-w-6xl mx-auto px-4 mt-24 fade-in">
+            <div id="premiumCarousel" class="carousel slide premium-carousel" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <?php foreach ($storySlugs as $index => $slug): ?>
+                        <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                            <img src="img/slide/image<?= $index + 1 ?>.jpg" class="d-block w-100" alt="<?= htmlspecialchars($stories[$slug]['name']) ?>">
+                            <div class="carousel-caption">
+                                <h5><?= htmlspecialchars($stories[$slug]['name']) ?></h5>
+                                <a href="views/truyen-detail.php?slug=<?= urlencode($slug) ?>" class="btn btn-xem-thong-tin no-underline">Xem thông tin</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#premiumCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#premiumCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden lg:hidden bg-gradient-to-b from-purple-800 to-teal-800 text-accent px-6 py-6 fixed top-12 left-0 w-full z-50 animate-slide-down">
+        <form method="GET" action="<?= $base_url ?>/views/tim-kiem.php" class="flex mb-4">
+            <input type="text" name="keyword" placeholder="Tìm kiếm..." required class="px-4 py-2 rounded-l-lg border-none text-gray-700 w-full text-lg transition-all duration-300">
+            <button type="submit" class="bg-button-primary px-4 py-2 rounded-r-lg hover:bg-button-hover text-white text-lg transition-all duration-300 animate-pulse-glow">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+        <a href="<?= $base_url ?>/views/truyen-moi.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Truyện Mới</a>
+        <a href="<?= $base_url ?>/views/hoan-thanh.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Hoàn Thành</a>
+        <a href="#" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline" id="mobile-categories-toggle">Thể Loại</a>
+        <div id="mobile-categories" class="hidden pl-6 space-y-2 mt-2 max-h-60 overflow-y-auto">
+            <?php if (!empty($categories)): ?>
+                <?php foreach ($categories as $category): ?>
+                    <a href="<?= $base_url ?>/views/truyen-theo-the-loai.php?slug=<?= htmlspecialchars($category['slug']) ?>" class="block text-lg text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-1 no-underline">
+                        <?= htmlspecialchars($category['name']) ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <a href="#" class="block text-gray-500 text-lg py-1 no-underline">Không có thể loại</a>
+            <?php endif; ?>
+        </div>
+        <a href="<?= $base_url ?>/views/dang-phat-hanh.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Đang Phát Hành</a>
+        <a href="<?= $base_url ?>/views/sap-ra-mat.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Sắp Ra Mắt</a>
+        <div class="space-y-2 mt-4">
+            <?php if (isset($_SESSION['user']['user_id'])): ?>
+                <a href="<?= $base_url ?>/views/tai-khoan.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Tài khoản</a>
+                <a href="<?= $base_url ?>/views/following.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Theo Dõi</a>
+                <a href="<?= $base_url ?>/views/lich-su-doc.php" class="block text-xl text-white hover:text-button-primary transition-all duration-300 hover:scale-105 py-2 no-underline">Lịch Sử Đọc</a>
+                <a href="<?= $base_url ?>/views/logout.php" class="block text-xl text-white hover:text-red-200 transition-all duration-300 hover:scale-105 py-2 no-underline">Đăng xuất</a>
+            <?php else: ?>
+                <a href="<?= $base_url ?>/views/login.php" class="block bg-button-primary px-6 py-3 rounded-lg hover:bg-button-hover text-white text-lg font-medium transition-all duration-300 animate-pulse-glow no-underline">Đăng nhập</a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('hamburger').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('animate-slide-down');
+                setTimeout(() => mobileMenu.classList.remove('animate-slide-down'), 300);
+            }
+        });
+
+        document.getElementById('mobile-categories-toggle').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('mobile-categories').classList.toggle('hidden');
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
