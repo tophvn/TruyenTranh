@@ -8,7 +8,7 @@ $page = max(1, (int)($_GET['page'] ?? 1)); // Đảm bảo page không nhỏ hơ
 
 // Hàm tính khoảng thời gian từ ngày cập nhật
 function timeAgo($dateString) {
-    if (empty($dateString)) return 'N/A';
+    if (empty($dateString)) return 'Chưa cập nhật';
     try {
         $updateTime = new DateTime($dateString);
         $currentTime = new DateTime();
@@ -20,8 +20,18 @@ function timeAgo($dateString) {
         elseif ($interval->i > 0) return $interval->i . ' phút trước';
         else return 'Vừa xong';
     } catch (Exception $e) {
-        return 'N/A';
+        return 'Chưa cập nhật';
     }
+}
+
+// Hàm định dạng lượt xem
+function formatViews($views) {
+    if ($views >= 1000000) {
+        return number_format($views / 1000000, 1, '.', '') . 'M';
+    } elseif ($views >= 1000) {
+        return number_format($views / 1000, 1, '.', '') . 'K';
+    }
+    return $views;
 }
 
 // Lấy thông tin lượt xem từ cơ sở dữ liệu
@@ -120,6 +130,47 @@ if (!empty($keyword)) {
             border-color: #00b7eb;
             color: #fff;
         }
+        /* CSS để đồng đều các thẻ truyện */
+        .manga-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 300px;
+        }
+        .card-img-top {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .manga-title {
+            font-size: 16px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 20px;
+        }
+        .views-row {
+            min-height: 20px;
+        }
+        .manga-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .manga-title a:hover {
+            color: #00b7eb;
+        }
     </style>
 </head>
 <body class="dark-mode">
@@ -162,17 +213,18 @@ if (!empty($keyword)) {
                                     ?>
                                 </a>
                                 <div class="card-body p-2">
-                                    <h5 class="manga-title" title="<?= htmlspecialchars($comic['name']) ?>"><?= htmlspecialchars($comic['name']) ?></h5>
-                                    <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
+                                    <h5 class="manga-title" title="<?= htmlspecialchars($comic['name']) ?>">
+                                        <a href="../views/truyen-detail.php?slug=<?= urlencode($comic['slug']) ?>">
+                                            <?= htmlspecialchars($comic['name']) ?>
+                                        </a>
+                                    </h5>
+                                    <div class="text-muted small info-row mt-1">
+                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?></span>
                                         <span><i class="fas fa-clock"></i> <?= timeAgo($comic['updatedAt'] ?? null) ?></span>
                                     </div>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fas fa-eye"></i> <?= getViews($comic['slug']) ?> lượt xem
+                                    <div class="text-muted small views-row mt-1">
+                                        <i class="fas fa-eye"></i> <?= formatViews(getViews($comic['slug'])) ?> lượt xem
                                     </div>
-                                    <!-- <div class="text-muted small mt-1">
-                                        <i class="fas fa-info-circle"></i> <?= translateStatus(htmlspecialchars($comic['status'])) ?>
-                                    </div> -->
                                 </div>
                             </div>
                         </div>

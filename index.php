@@ -5,7 +5,7 @@ session_start();
 $api_url = "https://otruyenapi.com/v1/api/home";
 $isIndexPage = basename($_SERVER['PHP_SELF']) === 'index.php';
 
-// Gọi API home để lấy danh sách truyện (cho phần "Truyện Mới Cập Nhật")
+// Gọi API home để lấy danh sách truyện
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $api_url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -20,6 +20,16 @@ $truyenList = (isset($data['data']) && !empty($data['data'])) ? $data['data']['i
 $truyenListBySlug = [];
 foreach ($truyenList as $truyen) {
     $truyenListBySlug[$truyen['slug']] = $truyen;
+}
+
+// Hàm định dạng lượt xem
+function formatViews($views) {
+    if ($views >= 1000000) {
+        return number_format($views / 1000000, 1, '.', '') . 'M';
+    } elseif ($views >= 1000) {
+        return number_format($views / 1000, 1, '.', '') . 'K';
+    }
+    return $views;
 }
 
 // Hàm lấy thông tin truyện từ API theo slug
@@ -54,7 +64,7 @@ foreach ($storySlugs as $slug) {
 // Hàm tính khoảng thời gian từ ngày cập nhật đến hiện tại
 function timeAgo($dateString) {
     if (empty($dateString) || $dateString === null) {
-        return 'N/A';
+        return 'Chưa cập nhật';
     }
     try {
         $updateTime = new DateTime($dateString);
@@ -67,7 +77,7 @@ function timeAgo($dateString) {
         elseif ($interval->i > 0) return $interval->i . ' phút trước';
         else return 'Vừa xong';
     } catch (Exception $e) {
-        return 'N/A';
+        return 'Chưa cập nhật';
     }
 }
 
@@ -90,11 +100,9 @@ function getMostViewedTruyen() {
     $topTruyen = [];
     while ($row = $result->fetch_assoc()) {
         $details = getStoryDetails($row['slug']);
-        // Ưu tiên chaptersLatest từ API /home nếu có
         $chaptersLatest = isset($truyenListBySlug[$row['slug']]['chaptersLatest']) 
             ? $truyenListBySlug[$row['slug']]['chaptersLatest'] 
             : $details['chaptersLatest'];
-        // Ưu tiên updatedAt từ API /home nếu có
         $updatedAt = isset($truyenListBySlug[$row['slug']]['updatedAt']) 
             ? $truyenListBySlug[$row['slug']]['updatedAt'] 
             : $row['updated_at'];
@@ -220,6 +228,56 @@ $featuredStories = array_slice($truyenList, 0, 5);
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* CSS để tiêu đề truyện có hiệu ứng hover */
+        .manga-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .manga-title a:hover {
+            color: #00b7eb;
+        }
+
+        /* CSS để đảm bảo các thẻ truyện đồng đều */
+        .manga-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 300px; /* Đảm bảo chiều cao tối thiểu */
+        }
+
+        .card-img-top {
+            width: 100%;
+            height: 200px; /* Chiều cao cố định cho ảnh */
+            object-fit: cover; /* Đảm bảo ảnh không bị méo */
+        }
+
+        .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .manga-title {
+            font-size: 16px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 20px; /* Đảm bảo chiều cao cố định cho dòng thông tin */
+        }
+
+        .views-row {
+            min-height: 20px; /* Đảm bảo chiều cao cố định cho dòng lượt xem */
+        }
     </style>
 </head>
 <body class="dark-mode">
@@ -248,13 +306,24 @@ $featuredStories = array_slice($truyenList, 0, 5);
                                 ?>
                             </a>
                             <div class="card-body p-2">
-                                <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
-                                <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                    <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                    <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
+                                <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>">
+                                    <a href="views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>">
+                                        <?= htmlspecialchars($truyen['name']) ?>
+                                    </a>
+                                </h5>
+                                <div class="text-muted small info-row mt-1">
+                                    <span>
+                                        <i class="fas fa-bookmark"></i> 
+                                        <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?>
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-clock"></i> 
+                                        <?= timeAgo($truyen['updatedAt'] ?? null) ?>
+                                    </span>
                                 </div>
-                                <div class="text-muted small mt-1">
-                                    <i class="fas fa-eye"></i> <?= getViews($truyen['slug']) ?> lượt xem
+                                <div class="text-muted small views-row mt-1">
+                                    <i class="fas fa-eye"></i> 
+                                    <?= formatViews(getViews($truyen['slug'])) ?> lượt xem
                                 </div>
                             </div>
                         </div>
@@ -293,13 +362,24 @@ $featuredStories = array_slice($truyenList, 0, 5);
                                     ?>
                                 </a>
                                 <div class="card-body p-2">
-                                    <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>"><?= htmlspecialchars($truyen['name']) ?></h5>
-                                    <div class="text-muted small d-flex justify-content-between align-items-center mt-1">
-                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'N/A') ?></span>
-                                        <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
+                                    <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>">
+                                        <a href="views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>">
+                                            <?= htmlspecialchars($truyen['name']) ?>
+                                        </a>
+                                    </h5>
+                                    <div class="text-muted small info-row mt-1">
+                                        <span>
+                                            <i class="fas fa-bookmark"></i> 
+                                            <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?>
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-clock"></i> 
+                                            <?= timeAgo($truyen['updatedAt'] ?? null) ?>
+                                        </span>
                                     </div>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fas fa-eye"></i> <?= $truyen['views'] ?> lượt xem
+                                    <div class="text-muted small views-row mt-1">
+                                        <i class="fas fa-eye"></i> 
+                                        <?= formatViews($truyen['views']) ?> lượt xem
                                     </div>
                                 </div>
                             </div>
