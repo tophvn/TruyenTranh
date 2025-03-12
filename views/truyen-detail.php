@@ -301,7 +301,7 @@ if ($homeData && isset($homeData['data']['items'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="../img/logo.png" rel="icon">
-    <title>Chi Tiết Truyện</title>
+    <title><?php echo htmlspecialchars($comicData['name'] ?? 'N/A'); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -355,6 +355,16 @@ if ($homeData && isset($homeData['data']['items'])) {
         .follow-button i, .like-button i {
             margin-right: 5px;
         }
+
+        .age-warning {
+            background-color: #ffebee;
+            color: #d32f2f;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -398,7 +408,25 @@ if ($homeData && isset($homeData['data']['items'])) {
                         </button>
                     </div>
                 </div>
-                
+
+                <!-- Thêm cảnh báo độ tuổi nếu có tag liên quan -->
+                <?php
+                $showAgeWarning = false;
+                $sensitiveTags = ['Adult', '16+', 'Ecchi', 'Smut', '18+']; // Danh sách các tag nhạy cảm
+                if (isset($comicData['category']) && is_array($comicData['category'])) {
+                    foreach ($comicData['category'] as $cat) {
+                        if (in_array(strtoupper($cat['name']), array_map('strtoupper', $sensitiveTags))) {
+                            $showAgeWarning = true;
+                            break;
+                        }
+                    }
+                }
+                if ($showAgeWarning): ?>
+                    <div class="age-warning">
+                        Cảnh báo độ tuổi: Truyện tranh <?php echo htmlspecialchars($comicData['name'] ?? 'N/A'); ?> có thể có nội dung và hình ảnh không phù hợp với lứa tuổi của bạn. Nếu bạn dưới 16 tuổi, vui lòng chọn một truyện khác để giải trí. Chúng tôi sẽ không chịu trách nhiệm liên quan nếu bạn bỏ qua cảnh báo này.
+                    </div>
+                <?php endif; ?>
+
                 <div class="description mt-3">
                     <hr>
                     <h2>Mô Tả</h2>
