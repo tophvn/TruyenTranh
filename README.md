@@ -3,7 +3,6 @@
 TruyenTranhNet là một website đọc truyện tranh trực tuyến miễn phí với nhiều tính năng hỗ trợ người dùng trải nghiệm đọc truyện tốt nhất, tự động update truyện. Hệ thống hỗ trợ tìm kiếm, theo dõi truyện, đăng nhập bằng Google, và mã hóa dữ liệu nhằm đảm bảo an toàn thông tin.
 
 ## 📌 Ảnh Demo
-
 - **Giao diện trang chủ**  
   ![Trang chủ](DEMO/1.png)
 - **Trang thông tin truyện**  
