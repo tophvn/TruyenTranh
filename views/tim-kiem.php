@@ -97,10 +97,11 @@ if (!empty($keyword)) {
     <meta name="robots" content="index, follow">
     <link href="../img/logo.png" rel="icon">
     <title>TRUYENTRANHNET - Tìm Kiếm Truyện</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/main.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .update-tag {
             background-color: #00b7eb;
@@ -112,8 +113,8 @@ if (!empty($keyword)) {
         }
         .badge-18plus {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             background-color: #ff0000;
             color: #ffffff;
             font-size: 12px;
@@ -122,62 +123,56 @@ if (!empty($keyword)) {
             border-radius: 3px;
             z-index: 10;
         }
+        .time-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background-color: #0099FF;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            z-index: 10;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .pagination .page-item {
+            display: inline-block;
+        }
         .pagination .page-link {
+            background-color: #1f2937;
             color: #00b7eb;
+            border: 1px solid #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        .pagination .page-link:hover {
+            background-color: #374151;
+            color: #fff;
         }
         .pagination .page-item.active .page-link {
             background-color: #00b7eb;
             border-color: #00b7eb;
             color: #fff;
         }
-        /* CSS để đồng đều các thẻ truyện */
-        .manga-card {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 300px;
-        }
-        .card-img-top {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .manga-title {
-            font-size: 16px;
-            margin-bottom: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 20px;
-        }
-        .views-row {
-            min-height: 20px;
-        }
-        .manga-title a {
-            color: inherit;
-            text-decoration: none;
-        }
-        .manga-title a:hover {
-            color: #00b7eb;
+        .pagination .page-item.disabled .page-link {
+            background-color: #1f2937;
+            color: #6b7280;
+            border-color: #374151;
+            cursor: not-allowed;
         }
     </style>
 </head>
-<body class="dark-mode">
+<body class="bg-gray-900 text-white font-poppins">
     <?php include '../includes/header.php'; ?>
-    <div class="container my-4">
-        <br><br><br><br>
-        <h4 class="section-title text-center"><i class="fas fa-search"></i> TÌM KIẾM TRUYỆN</h4>
+    <div class="container mx-auto px-4 py-8 pt-16">
+        <h4 class="text-2xl font-semibold mb-6 text-center"><i class="fas fa-search"></i> TÌM KIẾM TRUYỆN</h4>
         <form method="GET" action="tim-kiem.php" class="mb-4">
             <div class="input-group">
                 <input type="text" name="keyword" class="form-control" placeholder="Nhập từ khóa tìm kiếm" value="<?= htmlspecialchars($keyword) ?>" required>
@@ -191,40 +186,38 @@ if (!empty($keyword)) {
             <?php elseif (empty($searchResults)): ?>
                 <p class="text-center">Không có kết quả tìm kiếm cho từ khóa: "<?= htmlspecialchars($keyword) ?>"</p>
             <?php else: ?>
-                <h5 class="mt-4 text-center">KẾT QUẢ TÌM KIẾM CHO: "<?= htmlspecialchars($keyword) ?>" (<?= number_format($totalItems) ?> Truyện)</h5>
-                <div class="row g-4 fade-in">
+                <h5 class="mt-6 mb-4 text-xl font-semibold text-center text-blue-400 bg-gray-800 py-3 px-4 rounded-lg shadow-md">
+                    KẾT QUẢ TÌM KIẾM CHO: "<?= htmlspecialchars($keyword) ?>" 
+                    <span class="text-yellow-300">(<?= number_format($totalItems) ?> Truyện)</span>
+                </h5>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'" x-transition.duration.500ms>
                     <?php foreach ($searchResults as $comic): ?>
-                        <div class="col-6 col-md-4 col-lg-2 mb-4">
-                            <div class="manga-card">
-                                <a href="../views/truyen-detail.php?slug=<?= urlencode($comic['slug']) ?>" class="text-decoration-none position-relative">
-                                    <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($comic['thumb_url']) ?>" 
-                                         class="card-img-top manga-cover" 
-                                         alt="<?= htmlspecialchars($comic['name']) ?>" 
-                                         loading="lazy">
-                                    <?php 
-                                    if (isset($comic['category']) && is_array($comic['category'])) {
-                                        foreach ($comic['category'] as $cat) {
-                                            if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
-                                                echo '<span class="badge-18plus">18+</span>';
-                                                break;
-                                            }
+                        <div class="bg-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                            <a href="../views/truyen-tranh/<?= urlencode($comic['slug']) ?>" class="relative block">
+                                <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($comic['thumb_url']) ?>" 
+                                     class="w-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                                     alt="<?= htmlspecialchars($comic['name']) ?>" 
+                                     loading="lazy" 
+                                     style="aspect-ratio: 3/4; height: 220px;">
+                                <?php 
+                                if (isset($comic['category']) && is_array($comic['category'])) {
+                                    foreach ($comic['category'] as $cat) {
+                                        if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
+                                            echo '<span class="badge-18plus">18+</span>';
+                                            break;
                                         }
                                     }
-                                    ?>
-                                </a>
-                                <div class="card-body p-2">
-                                    <h5 class="manga-title" title="<?= htmlspecialchars($comic['name']) ?>">
-                                        <a href="../views/truyen-detail.php?slug=<?= urlencode($comic['slug']) ?>">
-                                            <?= htmlspecialchars($comic['name']) ?>
-                                        </a>
-                                    </h5>
-                                    <div class="text-muted small info-row mt-1">
-                                        <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?></span>
-                                        <span><i class="fas fa-clock"></i> <?= timeAgo($comic['updatedAt'] ?? null) ?></span>
-                                    </div>
-                                    <div class="text-muted small views-row mt-1">
-                                        <i class="fas fa-eye"></i> <?= formatViews(getViews($comic['slug'])) ?> lượt xem
-                                    </div>
+                                }
+                                ?>
+                                <span class="time-tag"><?= timeAgo($comic['updatedAt'] ?? null) ?></span>
+                            </a>
+                            <div class="p-2">
+                                <h5 class="text-base font-semibold truncate text-white mb-1 text-center">
+                                    <a href="../views/truyen-tranh/<?= urlencode($comic['slug']) ?>" class="hover:text-green-500 transition-colors duration-200"><?= htmlspecialchars($comic['name']) ?></a>
+                                </h5>
+                                <div class="flex justify-between items-center text-base text-gray-300 mb-1">
+                                    <span><i class="fas fa-bookmark mr-1 text-green-500"></i> <?= htmlspecialchars($comic['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?></span>
+                                    <span><i class="fas fa-eye mr-1 text-yellow-400"></i> <?= formatViews(getViews($comic['slug'])) ?></span>
                                 </div>
                             </div>
                         </div>
@@ -233,10 +226,10 @@ if (!empty($keyword)) {
 
                 <!-- Thanh phân trang -->
                 <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
+                    <ul class="pagination">
                         <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
                             <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $page - 1 ?>" aria-label="Previous">
-                                <span aria-hidden="true">« Trước</span>
+                                <span aria-hidden="true"><i class="fas fa-chevron-left"></i> Trước</span>
                             </a>
                         </li>
                         <?php if ($page > 3): ?>
@@ -262,7 +255,7 @@ if (!empty($keyword)) {
                         <?php endif; ?>
                         <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
                             <a class="page-link" href="tim-kiem.php?keyword=<?= urlencode($keyword) ?>&page=<?= $page + 1 ?>" aria-label="Next">
-                                <span aria-hidden="true">Tiếp »</span>
+                                <span aria-hidden="true">Tiếp <i class="fas fa-chevron-right"></i></span>
                             </a>
                         </li>
                     </ul>

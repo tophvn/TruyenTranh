@@ -95,148 +95,128 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="../img/logo.png" rel="icon">
     <title>Đăng Ký - TRUYENTRANHNET</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="../css/css-login-register.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#2a2e8a',
-                        'button-primary': '#4CAF50',
-                        'button-hover': '#45a049',
-                        'accent': '#ffffff',
-                        'hover-bg': '#e0e7ff',
-                        'button-glow': '#80e27e',
-                    },
-                    animation: {
-                        'slide-down': 'slide-down 0.3s ease-out',
-                        'fade-in': 'fade-in 0.2s ease-in-out',
-                        'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
-                    },
-                    keyframes: {
-                        'slide-down': {
-                            '0%': { transform: 'translateY(-100%)', opacity: 0 },
-                            '100%': { transform: 'translateY(0)', opacity: 1 },
-                        },
-                        'fade-in': {
-                            '0%': { opacity: 0 },
-                            '100%': { opacity: 1 },
-                        },
-                        'pulse-glow': {
-                            '0%, 100%': { boxShadow: '0 0 5px rgba(128, 226, 126, 0.3)' },
-                            '50%': { boxShadow: "0 0 15px rgba(128, 226, 126, 0.7)" },
-                        },
-                    },
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 font-['Inter'] pt-16 lg:pt-20">
-    <?php include('../includes/header.php'); // Thêm header.php ?>
+<body class="bg-gray-900 text-white dark-mode min-h-screen transition-all duration-300">
+    <?php include('../includes/header.php'); ?>
 
-    <!-- Nội dung trang đăng ký -->
-    <div class="site-wrap d-md-flex align-items-stretch min-h-screen">
-        <div class="bg-img" style="background-image: url('../img/register-1.png')"></div>
-        <div class="form-wrap">
-            <div class="form-inner p-4 sm:p-6 md:p-8">
-                <h1 class="title text-3xl sm:text-4xl md:text-5xl mb-4">Đăng Ký</h1>
-                <p class="caption mb-4 text-sm sm:text-base">Tạo tài khoản của bạn chỉ trong vài giây.</p>
-                <?php if (!empty($errors)): ?>
-                    <div class="alert alert-danger">
-                        <?php foreach ($errors as $error): ?>
-                            <p><?php echo $error; ?></p>
-                        <?php endforeach; ?>
+    <main class="container mx-auto px-4 py-8 pt-16 flex items-center justify-center min-h-screen">
+        <div class="content-wrapper max-w-md w-full bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h1 class="text-center text-3xl font-bold mb-4">Đăng Ký</h1>
+            <p class="text-center text-gray-400 mb-6">Tạo tài khoản của bạn chỉ trong vài giây.</p>
+
+            <?php if (!empty($errors)): ?>
+                <div class="bg-red-500 text-white p-3 rounded-lg mb-4">
+                    <?php foreach ($errors as $error): ?>
+                        <p class="text-sm"><?php echo $error; ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($otp_success_message)): ?>
+                <div class="bg-green-500 text-white p-3 rounded-lg mb-4" id="otpSuccessMessage">
+                    <?php echo $otp_success_message; ?>
+                </div>
+                <script>
+                    setTimeout(() => {
+                        document.getElementById('otpSuccessMessage').style.display = 'none';
+                    }, 5000);
+                </script>
+            <?php endif; ?>
+
+            <form action="" method="POST" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium mb-1">Tên Đăng Nhập</label>
+                    <input type="text" id="username" name="username" placeholder="Tên Đăng Nhập" value="<?php echo htmlspecialchars($username); ?>" required
+                           class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="name" class="block text-sm font-medium mb-1">Họ và Tên</label>
+                    <input type="text" id="name" name="name" placeholder="Họ và Tên" value="<?php echo htmlspecialchars($name); ?>" required
+                           class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium mb-1">Địa Chỉ Email</label>
+                    <input type="email" id="email" name="email" placeholder="info@example.com" value="<?php echo htmlspecialchars($email); ?>" required
+                           class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium mb-1">Mật khẩu</label>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" placeholder="Mật khẩu" value="<?php echo htmlspecialchars($password); ?>" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="js-password-show-toggle absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-300"
+                              onclick="togglePassword('password')">
+                            <i class="fas fa-eye"></i>
+                        </span>
                     </div>
-                <?php endif; ?>
-                <?php if (isset($otp_success_message)): ?>
-                    <div class="alert alert-success" id="otpSuccessMessage">
-                        <?php echo $otp_success_message; ?>
+                </div>
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium mb-1">Xác Nhận Mật Khẩu</label>
+                    <div class="relative">
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Xác Nhận Mật Khẩu" value="<?php echo htmlspecialchars($confirm_password); ?>" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="js-password-show-toggle absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-300"
+                              onclick="togglePassword('confirm_password')">
+                            <i class="fas fa-eye"></i>
+                        </span>
                     </div>
-                    <script>
-                        setTimeout(function() {
-                            document.getElementById('otpSuccessMessage').style.display = 'none';
-                        }, 5000);
-                    </script>
-                <?php endif; ?>
-                <form action="" method="POST" class="pt-3">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="username" id="username" placeholder="Tên Đăng Nhập" value="<?php echo htmlspecialchars($username); ?>" required>
-                        <label for="username">Tên Đăng Nhập</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="name" id="name" placeholder="Họ và Tên" value="<?php echo htmlspecialchars($name); ?>" required>
-                        <label for="name">Họ và Tên</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" name="email" id="email" placeholder="info@example.com" value="<?php echo htmlspecialchars($email); ?>" required>
-                        <label for="email">Địa Chỉ Email</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <span class="password-show-toggle js-password-show-toggle"><span class="uil"></span></span>
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Mật khẩu" value="<?php echo htmlspecialchars($password); ?>" required>
-                        <label for="password">Mật Khẩu</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <span class="password-show-toggle js-password-show-toggle"><span class="uil"></span></span>
-                        <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Xác Nhận Mật Khẩu" value="<?php echo htmlspecialchars($confirm_password); ?>" required>
-                        <label for="confirm_password">Xác Nhận Mật Khẩu</label>
-                    </div>
-                    <div class="form-floating d-flex mb-4">
-                        <button type="submit" class="btn btn-secondary me-3" name="send_otp" id="send_otp" style="width: 150px;">Gửi OTP</button>
-                        <?php if (!empty($sent_otp)): ?>
-                            <input type="text" class="form-control" name="otp" id="otp" placeholder="Mã OTP" required style="width: 200px;">
-                        <?php endif; ?>
-                    </div>
-                    <div class="d-grid mb-4">
-                        <button type="submit" class="btn btn-primary" name="submit">Đăng Ký</button>
-                    </div>
-                    <div class="mb-2 text-center">Đã có tài khoản? <a href="login.php">Đăng Nhập</a></div>
-                    <div class="social-account-wrap">
-                        <h4 class="mb-4"><span>hoặc tiếp tục với</span></h4>
-                        <ul class="list-unstyled social-account d-flex justify-content-between">
-                            <li><a href="<?php echo $googleLoginUrl ?? '#'; ?>"><img src="../img/Icon/icon-google.svg" alt="Google"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-facebook.svg" alt="Facebook"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-apple.svg" alt="Apple"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-twitter.svg" alt="Twitter"></a></li>
-                        </ul>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="flex space-x-4 mb-4">
+                    <button type="submit" name="send_otp" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition duration-300">
+                        Gửi OTP
+                    </button>
+                    <?php if (!empty($_SESSION['otp'])): ?>
+                        <input type="text" name="otp" id="otp" placeholder="Mã OTP" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <?php endif; ?>
+                </div>
+                <button type="submit" name="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Đăng Ký
+                </button>
+                <div class="text-center text-sm text-gray-400 mt-4">
+                    Đã có tài khoản? <a href="login.php" class="text-blue-400 hover:text-blue-300">Đăng nhập</a>
+                </div>
+                
+            </form>
         </div>
-    </div>
+    </main>
 
-    <!-- Nút quay lại -->
-    <a href="../index.php" class="btn" style="position: fixed; bottom: 20px; right: 20px; display: inline-flex; align-items: center; background-color: white; border: none; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 50px; height: 50px; justify-content: center; z-index: 1000;">
-        <i class="uil uil-estate" style="font-size: 1.5rem; color: #007bff;"></i>
+    <?php include('../includes/footer.php'); ?>
+
+    <a href="../index.php" class="fixed bottom-6 right-6 bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-200 transition duration-300 z-50">
+        <i class="uil uil-estate text-blue-600 text-xl"></i>
     </a>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Xử lý hamburger menu
-        document.getElementById('hamburger').addEventListener('click', function() {
-            const navMenu = document.getElementById('nav-menu');
-            navMenu.classList.toggle('hidden');
-            if (!navMenu.classList.contains('hidden')) {
-                navMenu.classList.add('animate-slide-down');
-                setTimeout(() => navMenu.classList.remove('animate-slide-down'), 300);
+        // Hàm toggle hiển thị mật khẩu
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggle = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.querySelector('i').classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                toggle.querySelector('i').classList.replace('fa-eye-slash', 'fa-eye');
             }
-        });
+        }
 
-        // Xử lý toggle hiển thị mật khẩu
-        document.querySelectorAll('.js-password-show-toggle').forEach(item => {
-            item.addEventListener('click', function() {
-                const input = this.parentElement.querySelector('input');
-                this.classList.toggle('active');
-                input.type = input.type === 'password' ? 'text' : 'password';
+        // Xử lý menu hamburger (giả định trong header.php)
+        const hamburger = document.getElementById('hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                const navMenu = document.getElementById('nav-menu');
+                if (navMenu) {
+                    navMenu.classList.toggle('hidden');
+                    if (!navMenu.classList.contains('hidden')) {
+                        navMenu.classList.add('animate-slide-down');
+                        setTimeout(() => navMenu.classList.remove('animate-slide-down'), 300);
+                    }
+                }
             });
-        });
+        }
     </script>
 </body>
 </html>

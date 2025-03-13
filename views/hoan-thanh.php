@@ -43,9 +43,6 @@ function timeAgo($dateString) {
             $text = $interval->y . ' năm trước';
         } elseif ($interval->m > 0) {
             $text = $interval->m . ' tháng trước';
-            if (strlen($text) > 10) {
-                $text = substr($text, 0, 7) . '...';
-            }
         } elseif ($interval->d > 0) {
             $text = $interval->d . ' ngày trước';
         } elseif ($interval->h > 0) {
@@ -88,10 +85,11 @@ function getViews($slug) {
     <meta name="robots" content="index, follow">
     <link href="../img/logo.png" rel="icon">
     <title>TRUYENTRANHNET - Danh Sách Truyện Hoàn Thành</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/main.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .update-tag {
             background-color: #00b7eb;
@@ -103,8 +101,8 @@ function getViews($slug) {
         }
         .badge-18plus {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             background-color: #ff0000;
             color: #ffffff;
             font-size: 12px;
@@ -113,96 +111,86 @@ function getViews($slug) {
             border-radius: 3px;
             z-index: 10;
         }
+        .time-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background-color: #0099FF;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            z-index: 10;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .pagination .page-item {
+            display: inline-block;
+        }
         .pagination .page-link {
+            background-color: #1f2937;
             color: #00b7eb;
+            border: 1px solid #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        .pagination .page-link:hover {
+            background-color: #374151;
+            color: #fff;
         }
         .pagination .page-item.active .page-link {
             background-color: #00b7eb;
             border-color: #00b7eb;
             color: #fff;
         }
-        /* CSS để đồng đều các thẻ truyện */
-        .manga-card {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 300px;
-        }
-        .card-img-top {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .manga-title {
-            font-size: 16px;
-            margin-bottom: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 20px;
-        }
-        .views-row {
-            min-height: 20px;
-        }
-        .manga-title a {
-            color: inherit;
-            text-decoration: none;
-        }
-        .manga-title a:hover {
-            color: #00b7eb;
+        .pagination .page-item.disabled .page-link {
+            background-color: #1f2937;
+            color: #6b7280;
+            border-color: #374151;
+            cursor: not-allowed;
         }
     </style>
 </head>
-<body class="dark-mode">
+<body class="bg-gray-900 text-white font-poppins">
     <?php include '../includes/header.php'; ?>
-    <div class="container my-4">
-        <br><br><br><br>
-        <h4 class="section-title text-center"><i class="fas fa-check-circle"></i> DANH SÁCH TRUYỆN HOÀN THÀNH</h4>
-        <div class="row g-4 fade-in">
+
+    <div class="container mx-auto px-4 py-8 pt-16">
+        <h4 class="text-2xl font-semibold mb-6 text-center"><i class="fas fa-check-circle"></i> DANH SÁCH TRUYỆN HOÀN THÀNH</h4>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'" x-transition.duration.500ms>
             <?php if (!empty($truyenList)): ?>
                 <?php foreach ($truyenList as $truyen): ?>
-                    <div class="col-6 col-md-4 col-lg-2 mb-4">
-                        <div class="manga-card">
-                            <a href="../views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>" class="text-decoration-none position-relative">
-                                <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
-                                     class="card-img-top manga-cover" 
-                                     alt="<?= htmlspecialchars($truyen['name']) ?>" 
-                                     loading="lazy">
-                                <?php 
-                                if (isset($truyen['category']) && is_array($truyen['category'])) {
-                                    foreach ($truyen['category'] as $cat) {
-                                        if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
-                                            echo '<span class="badge-18plus">18+</span>';
-                                            break;
-                                        }
+                    <div class="bg-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <a href="../views/truyen-tranh/<?= urlencode($truyen['slug']) ?>" class="relative block">
+                            <img src="https://img.otruyenapi.com/uploads/comics/<?= htmlspecialchars($truyen['thumb_url']) ?>" 
+                                 class="w-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                                 alt="<?= htmlspecialchars($truyen['name']) ?>" 
+                                 loading="lazy" 
+                                 style="aspect-ratio: 3/4; height: 220px;">
+                            <?php 
+                            if (isset($truyen['category']) && is_array($truyen['category'])) {
+                                foreach ($truyen['category'] as $cat) {
+                                    if (in_array($cat['name'], ['Adult', '16+', 'Ecchi', 'Smut'])) {
+                                        echo '<span class="badge-18plus">18+</span>';
+                                        break;
                                     }
                                 }
-                                ?>
-                            </a>
-                            <div class="card-body p-2">
-                                <h5 class="manga-title" title="<?= htmlspecialchars($truyen['name']) ?>">
-                                    <a href="../views/truyen-detail.php?slug=<?= urlencode($truyen['slug']) ?>">
-                                        <?= htmlspecialchars($truyen['name']) ?>
-                                    </a>
-                                </h5>
-                                <div class="text-muted small info-row mt-1">
-                                    <span><i class="fas fa-bookmark"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có chương') ?></span>
-                                    <span><i class="fas fa-clock"></i> <?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
-                                </div>
-                                <div class="text-muted small views-row mt-1">
-                                    <i class="fas fa-eye"></i> <?= formatViews(getViews($truyen['slug'])) ?> lượt xem
-                                </div>
+                            }
+                            ?>
+                            <span class="time-tag"><?= timeAgo($truyen['updatedAt'] ?? null) ?></span>
+                        </a>
+                        <div class="p-2">
+                            <h5 class="text-base font-semibold truncate text-white mb-1 text-center">
+                                <a href="../views/truyen-tranh/<?= urlencode($truyen['slug']) ?>" class="hover:text-green-500 transition-colors duration-200"><?= htmlspecialchars($truyen['name']) ?></a>
+                            </h5>
+                            <div class="flex justify-between items-center text-base text-gray-300 mb-1">
+                                <span><i class="fas fa-bookmark mr-1 text-green-500"></i> <?= htmlspecialchars($truyen['chaptersLatest'][0]['chapter_name'] ?? 'Chưa có') ?></span>
+                                <span><i class="fas fa-eye mr-1 text-yellow-400"></i> <?= formatViews(getViews($truyen['slug'])) ?></span>
                             </div>
                         </div>
                     </div>
@@ -214,11 +202,11 @@ function getViews($slug) {
 
         <!-- Thanh phân trang -->
         <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination">
                 <!-- Nút Previous -->
                 <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
                     <a class="page-link" href="hoan-thanh.php?page=<?= $page - 1 ?>" aria-label="Previous">
-                        <span aria-hidden="true">« Trước</span>
+                        <span aria-hidden="true"><i class="fas fa-chevron-left"></i> Trước</span>
                     </a>
                 </li>
 
@@ -232,8 +220,19 @@ function getViews($slug) {
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <!-- Hiển thị các trang gần trang hiện tại -->
-                <?php for ($i = max(1, $page - 2); $i <= min($page + 2, $totalPages); $i++): ?>
+                <!-- Hiển thị tối đa 5 trang gần trang hiện tại -->
+                <?php
+                $startPage = max(1, $page - 2);
+                $endPage = min($totalPages, $page + 2);
+                if ($endPage - $startPage < 4) {
+                    if ($startPage === 1) {
+                        $endPage = min($totalPages, $startPage + 4);
+                    } else {
+                        $startPage = max(1, $endPage - 4);
+                    }
+                }
+                ?>
+                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                     <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
                         <a class="page-link" href="hoan-thanh.php?page=<?= $i ?>"><?= $i ?></a>
                     </li>
@@ -252,7 +251,7 @@ function getViews($slug) {
                 <!-- Nút Next -->
                 <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
                     <a class="page-link" href="hoan-thanh.php?page=<?= $page + 1 ?>" aria-label="Next">
-                        <span aria-hidden="true">Tiếp »</span>
+                        <span aria-hidden="true">Tiếp <i class="fas fa-chevron-right"></i></span>
                     </a>
                 </li>
             </ul>

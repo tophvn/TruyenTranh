@@ -428,3 +428,131 @@ body {
   }
 }
 
+/* CSS cho tag thời gian cập nhật */
+.update-tag {
+  background-color: #00b7eb;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Badge 18+ */
+.badge-18plus {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ff0000;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+/* CSS cho phần Top Xem Nhiều */
+.top-most-viewed {
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  margin-top: 40px;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.section-title-top {
+  font-size: 28px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Hiệu ứng cho top 3 */
+.vip-card {
+  border: 2px solid #ffd700;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.vip-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Badge xếp hạng */
+.rank-badge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 30px;
+  height: 30px;
+  background-color: #ffd700;
+  color: #000;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* CSS để tiêu đề truyện có hiệu ứng hover */
+.manga-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.manga-title a:hover {
+  color: #00b7eb;
+}
+
+/* CSS để đảm bảo các thẻ truyện đồng đều */
+.manga-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 300px; /* Đảm bảo chiều cao tối thiểu */
+}
+
+.card-img-top {
+  width: 100%;
+  height: 200px; /* Chiều cao cố định cho ảnh */
+  object-fit: cover; /* Đảm bảo ảnh không bị méo */
+}
+
+.card-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.manga-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 20px; /* Đảm bảo chiều cao cố định cho dòng thông tin */
+}
+
+.views-row {
+  min-height: 20px; /* Đảm bảo chiều cao cố định cho dòng lượt xem */
+}

@@ -77,7 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$recaptchaValidation['success']) {
         $errors[] = 'Xác minh reCAPTCHA thất bại. Vui lòng thử lại!';
     } else {
-        $result = $conn->query("SELECT * FROM users WHERE (username = '$login' OR email = '$login')");
+        // Mã hóa login để so sánh với username trong database
+        $hashedLogin = md5($login);
+
+        // Dùng prepared statement để kiểm tra username (đã mã hóa) hoặc email (nguyên bản)
+        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+        $stmt->bind_param("ss", $hashedLogin, $login); // So sánh hashedLogin với username, login với email
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
@@ -89,7 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'roles' => $user['roles'],
                     'avatar' => $user['avatar'],
                 ];
-
                 error_log("Login with form successful, user_id: " . $_SESSION['user']['user_id']);
                 header("Location: ../index.php");
                 exit();
@@ -99,9 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errors[] = 'Sai tên người dùng hoặc email!';
         }
+        $stmt->close();
     }
 }
-
 // Tạo URL đăng nhập Google
 $googleLoginUrl = $client->createAuthUrl();
 ?>
@@ -115,119 +122,96 @@ $googleLoginUrl = $client->createAuthUrl();
     <title>Đăng Nhập - TRUYENTRANHNET</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <link rel="stylesheet" href="../css/css-login-register.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#2a2e8a',
-                        'button-primary': '#4CAF50',
-                        'button-hover': '#45a049',
-                        'accent': '#ffffff',
-                        'hover-bg': '#e0e7ff',
-                        'button-glow': '#80e27e',
-                    },
-                    animation: {
-                        'slide-down': 'slide-down 0.3s ease-out',
-                        'fade-in': 'fade-in 0.2s ease-in-out',
-                        'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
-                    },
-                    keyframes: {
-                        'slide-down': {
-                            '0%': { transform: 'translateY(-100%)', opacity: 0 },
-                            '100%': { transform: 'translateY(0)', opacity: 1 },
-                        },
-                        'fade-in': {
-                            '0%': { opacity: 0 },
-                            '100%': { opacity: 1 },
-                        },
-                        'pulse-glow': {
-                            '0%, 100%': { boxShadow: '0 0 5px rgba(128, 226, 126, 0.3)' },
-                            '50%': { boxShadow: "0 0 15px rgba(128, 226, 126, 0.7)" },
-                        },
-                    },
-                }
-            }
-        }
-    </script>
 </head>
-<body class="bg-gray-50 font-['Inter'] pt-16 lg:pt-20">
+<body class="bg-gray-900 text-white dark-mode min-h-screen transition-all duration-300">
     <?php include('../includes/header.php'); ?>
-    <div class="site-wrap d-md-flex align-items-stretch min-h-screen">
-        <div class="bg-img" style="background-image: url('../img/login-2.png')"></div>
-        <div class="form-wrap">
-            <div class="form-inner p-4 sm:p-6 md:p-8">
-                <h1 class="title text-3xl sm:text-4xl md:text-5xl mb-4">Đăng Nhập</h1>
-                <p class="caption mb-4 text-sm sm:text-base">Vui lòng nhập thông tin đăng nhập của bạn để tiếp tục.</p>
-                <?php if (!empty($errors)): ?>
-                    <div class="alert alert-danger">
-                        <?php foreach ($errors as $error): ?>
-                            <p><?php echo $error; ?></p>
-                        <?php endforeach; ?>
+
+    <main class="container mx-auto px-4 py-8 pt-16 flex items-center justify-center min-h-screen">
+        <div class="content-wrapper max-w-md w-full bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h1 class="text-center text-3xl font-bold mb-4">Đăng Nhập</h1>
+            <?php if (!empty($errors)): ?>
+                <div class="bg-red-500 text-white p-3 rounded-lg mb-4">
+                    <?php foreach ($errors as $error): ?>
+                        <p class="text-sm"><?php echo $error; ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form action="" method="POST" class="space-y-4" id="loginForm">
+                <div>
+                    <label for="login" class="block text-sm font-medium mb-1">Tên đăng nhập hoặc Email</label>
+                    <input type="text" id="login" name="login" placeholder="Tên đăng nhập hoặc Email" required
+                           class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium mb-1">Mật khẩu</label>
+                    <input type="password" id="password" name="password" placeholder="Mật khẩu" required
+                           class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember" name="remember" class="mr-2 accent-blue-500">
+                        <label for="remember" class="text-sm text-gray-400">Nhớ tài khoản</label>
                     </div>
-                <?php endif; ?>
-                <form action="" method="POST" class="pt-3" id="loginForm">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" name="login" id="login" placeholder="Tên đăng nhập hoặc Email" required>
-                        <label for="login">Tên đăng nhập hoặc Email</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Mật khẩu" required>
-                        <label for="password">Mật Khẩu</label>
-                    </div>
-                    <div class="d-flex flex-wrap justify-content-between mb-4">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="remember">
-                            <label for="remember" class="form-check-label">Nhớ tài khoản</label>
-                        </div>
-                        <div><a href="forgot_password.php">Quên mật khẩu?</a></div>
-                    </div>
-                    <div class="g-recaptcha mb-4" data-sitekey="6LdMRIwqAAAAAIZlIaS2kTj9gAgWljC2VEfKaROG"></div>
-                    <div class="d-grid mb-4">
-                        <button type="submit" class="btn btn-primary">Đăng Nhập</button>
-                    </div>
-                    <div class="mb-2 text-center">Bạn chưa có tài khoản? <a href="register.php">Đăng ký</a></div>
-                    <div class="social-account-wrap">
-                        <h4 class="mb-4"><span>hoặc tiếp tục với</span></h4>
-                        <ul class="list-unstyled social-account d-flex justify-content-between">
-                            <li><a href="<?php echo $googleLoginUrl; ?>"><img src="../img/Icon/icon-google.svg" alt="Google"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-facebook.svg" alt="Facebook"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-apple.svg" alt="Apple"></a></li>
-                            <li><a href="#"><img src="../img/Icon/icon-twitter.svg" alt="Twitter"></a></li>
-                        </ul>
-                    </div>
-                </form>
-            </div>
+                    <a href="forgot_password.php" class="text-sm text-blue-400 hover:text-blue-300">Quên mật khẩu?</a>
+                </div>
+                <div class="g-recaptcha mb-4" data-sitekey="6LdMRIwqAAAAAIZlIaS2kTj9gAgWljC2VEfKaROG"></div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Đăng Nhập
+                </button>
+                <div class="text-center text-sm text-gray-400">
+                    Bạn chưa có tài khoản? <a href="register.php" class="text-blue-400 hover:text-blue-300">Đăng ký</a>
+                </div>
+                <div class="text-center my-4">Hoặc tiếp tục với</div>
+                <div class="flex justify-between space-x-2">
+                    <a href="<?php echo $googleLoginUrl; ?>" class="flex-1 bg-gray-700 p-2 rounded-lg text-center hover:bg-gray-600 transition">
+                        <img src="../img/Icon/icon-google.svg" alt="Google" class="w-6 h-6 mx-auto">
+                    </a>
+                    <!-- <a href="#" class="flex-1 bg-gray-700 p-2 rounded-lg text-center hover:bg-gray-600 transition">
+                        <img src="../img/Icon/icon-facebook.svg" alt="Facebook" class="w-6 h-6 mx-auto">
+                    </a>
+                    <a href="#" class="flex-1 bg-gray-700 p-2 rounded-lg text-center hover:bg-gray-600 transition">
+                        <img src="../img/Icon/icon-apple.svg" alt="Apple" class="w-6 h-6 mx-auto">
+                    </a>
+                    <a href="#" class="flex-1 bg-gray-700 p-2 rounded-lg text-center hover:bg-gray-600 transition">
+                        <img src="../img/Icon/icon-twitter.svg" alt="Twitter" class="w-6 h-6 mx-auto">
+                    </a> -->
+                </div>
+            </form>
         </div>
-    </div>
-    <a href="../index.php" class="btn" style="position: fixed; bottom: 20px; right: 20px; display: inline-flex; align-items: center; background-color: white; border: none; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 50px; height: 50px; justify-content: center; z-index: 1000;">
-        <i class="uil uil-estate" style="font-size: 1.5rem; color: #007bff;"></i>
+    </main>
+
+    <?php include('../includes/footer.php'); ?>
+
+    <a href="../index.php" class="fixed bottom-6 right-6 bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-200 transition duration-300 z-50">
+        <i class="uil uil-estate text-blue-600 text-xl"></i>
     </a>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).on('submit', '#loginForm', function(event) {
-            var response = grecaptcha.getResponse();
-            if (response.length === 0) {
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (recaptchaResponse.length === 0) {
                 alert("Vui lòng xác thực bạn không phải là robot");
                 event.preventDefault();
             }
         });
-        document.getElementById('hamburger').addEventListener('click', function() {
-            const navMenu = document.getElementById('nav-menu');
-            navMenu.classList.toggle('hidden');
-            if (!navMenu.classList.contains('hidden')) {
-                navMenu.classList.add('animate-slide-down');
-                setTimeout(() => navMenu.classList.remove('animate-slide-down'), 300);
-            }
-        });
+
+        // Xử lý menu hamburger (giả định trong header.php)
+        const hamburger = document.getElementById('hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                const navMenu = document.getElementById('nav-menu');
+                if (navMenu) {
+                    navMenu.classList.toggle('hidden');
+                    if (!navMenu.classList.contains('hidden')) {
+                        navMenu.classList.add('animate-slide-down');
+                        setTimeout(() => navMenu.classList.remove('animate-slide-down'), 300);
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

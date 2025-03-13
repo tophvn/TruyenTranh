@@ -9,16 +9,12 @@ if (!isset($_GET['token']) || empty($_GET['token'])) {
     $error_message = "Mã xác nhận không được cung cấp.";
 } else {
     $token = trim($_GET['token']); 
-
-    // Debug: Ghi log token từ URL
     error_log("Token từ URL: " . $token);
 
-    // Truy vấn kiểm tra token (đồng bộ với forgot_password.php)
-    $token = mysqli_real_escape_string($conn, $token); // Bảo vệ SQL Injection
+    $token = mysqli_real_escape_string($conn, $token);
     $query = "SELECT * FROM users WHERE reset_token = '$token'";
     $result = $conn->query($query);
 
-    // Debug: Ghi log truy vấn và số hàng trả về
     error_log("Truy vấn: " . $query);
     error_log("Số hàng trả về: " . ($result ? $result->num_rows : 'Lỗi'));
 
@@ -41,7 +37,6 @@ $success_message = "";
 if (isset($email) && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
-    // Kiểm tra điều kiện mật khẩu
     if (strlen($new_password) < 6) {
         $error = "Mật khẩu phải lớn hơn 6 ký tự.";
     } elseif (preg_match('/[^\w]/', $new_password)) {
@@ -68,59 +63,82 @@ $conn->close();
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="../img/logo.png" rel="icon">
     <title>Đặt Lại Mật Khẩu - TRUYENTRANHNET</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <link rel="stylesheet" href="../css/css-login-register.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-gray-900 text-white dark-mode min-h-screen transition-all duration-300">
     <?php include('../includes/header.php'); ?>
-    <div class="site-wrap d-md-flex align-items-stretch">
-        <div class="bg-img" style="background-image: url('../img/reset-1.jpg')"></div>
-        <div class="form-wrap">
-            <div class="form-inner">
-                <h1 class="title">Đặt Lại Mật Khẩu</h1>
-                <?php if (isset($error_message)): ?>
-                    <div class="alert alert-danger">
-                        <p><?php echo $error_message; ?></p>
+
+    <main class="container mx-auto px-4 py-8 pt-16 flex items-center justify-center min-h-screen">
+        <div class="content-wrapper max-w-md w-full bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h1 class="text-center text-3xl font-bold mb-4">Đặt Lại Mật Khẩu</h1>
+            <p class="text-center text-gray-400 mb-6">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+
+            <?php if (isset($error_message)): ?>
+                <div class="bg-red-500 text-white p-3 rounded-lg mb-4">
+                    <p class="text-sm"><?php echo $error_message; ?></p>
+                </div>
+                <div class="text-center text-sm text-gray-400 mt-4">
+                    Quay lại <a href="login.php" class="text-blue-400 hover:text-blue-300">Đăng Nhập</a>
+                </div>
+            <?php elseif (!empty($error)): ?>
+                <div class="bg-red-500 text-white p-3 rounded-lg mb-4">
+                    <p class="text-sm"><?php echo $error; ?></p>
+                </div>
+            <?php elseif (!empty($success_message)): ?>
+                <div class="bg-green-500 text-white p-3 rounded-lg mb-4">
+                    <p class="text-sm"><?php echo $success_message; ?></p>
+                </div>
+                <div class="text-center text-sm text-gray-400 mt-4">
+                    Quay lại <a href="login.php" class="text-blue-400 hover:text-blue-300">Đăng Nhập</a>
+                </div>
+            <?php else: ?>
+                <form action="" method="POST" class="space-y-4">
+                    <div>
+                        <label for="new_password" class="block text-sm font-medium mb-1">Mật Khẩu Mới</label>
+                        <input type="password" id="new_password" name="new_password" placeholder="Mật khẩu mới" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div class="mb-2 text-center">Quay lại <a href="login.php">Đăng Nhập</a></div>
-                <?php elseif (!empty($error)): ?>
-                    <div class="alert alert-danger">
-                        <p><?php echo $error; ?></p>
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium mb-1">Xác Nhận Mật Khẩu</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Xác nhận mật khẩu" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                <?php elseif (!empty($success_message)): ?>
-                    <div class="alert alert-success">
-                        <p><?php echo $success_message; ?></p>
+                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                        Cập Nhật Mật Khẩu
+                    </button>
+                    <div class="text-center text-sm text-gray-400 mt-4">
+                        Quay lại <a href="login.php" class="text-blue-400 hover:text-blue-300">Đăng Nhập</a>
                     </div>
-                    <div class="mb-4 text-center">
-                        <a href="login.php">
-                            <button type="button" class="btn btn-primary">Đăng Nhập</button>
-                        </a>
-                    </div>
-                <?php else: ?>
-                    <form action="" method="POST" class="pt-3">
-                        <div class="form-floating">
-                            <input type="password" class="form-control" name="new_password" id="new_password" placeholder="Mật khẩu mới" required>
-                            <label for="new_password">Mật khẩu mới</label>
-                        </div>
-                        <div class="form-floating">
-                            <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Xác nhận mật khẩu" required>
-                            <label for="confirm_password">Xác nhận mật khẩu</label>
-                        </div>
-                        <div class="d-grid mb-4">
-                            <button type="submit" class="btn btn-primary">Cập nhật mật khẩu</button>
-                        </div>
-                        <div class="mb-2 text-center">Quay lại <a href="login.php">Đăng Nhập</a></div>
-                    </form>
-                <?php endif; ?>
-            </div>
+                </form>
+            <?php endif; ?>
         </div>
-    </div>
-    <a href="../index.php" class="btn" style="position: fixed; bottom: 20px; right: 20px; display: inline-flex; align-items: center; background-color: white; border: none; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 50px; height: 50px; justify-content: center; z-index: 1000;">
-        <i class="uil uil-estate" style="font-size: 1.5rem; color: #007bff;"></i>
+    </main>
+
+    <?php include('../includes/footer.php'); ?>
+
+    <a href="../index.php" class="fixed bottom-6 right-6 bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-200 transition duration-300 z-50">
+        <i class="uil uil-estate text-blue-600 text-xl"></i>
     </a>
+
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                const navMenu = document.getElementById('nav-menu');
+                if (navMenu) {
+                    navMenu.classList.toggle('hidden');
+                    if (!navMenu.classList.contains('hidden')) {
+                        navMenu.classList.add('animate-slide-down');
+                        setTimeout(() => navMenu.classList.remove('animate-slide-down'), 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

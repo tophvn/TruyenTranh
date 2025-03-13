@@ -1,7 +1,7 @@
 <?php 
 $base_dir = dirname(__DIR__);
 $visitFile = $base_dir . '/visit_count.txt';
-$activeUsersFile = $base_dir . '/active_users.txt';
+$randomUsersFile = $base_dir . '/random_users.txt'; 
 
 if (!file_exists($visitFile)) {
     file_put_contents($visitFile, '0');
@@ -10,236 +10,58 @@ $visitCount = (int) file_get_contents($visitFile);
 $visitCount++;
 file_put_contents($visitFile, $visitCount);
 
-$sessionStarted = session_status() === PHP_SESSION_ACTIVE ? true : false;
-if (!$sessionStarted) {
-    session_start();
-}
-$sessionLifetime = 300; 
-$activeUsers = [];
+function getRandomActiveUsers($file, $interval = 40) {
+    $currentTime = time();
+    $data = ['count' => rand(2, 50), 'timestamp' => $currentTime]; 
 
-if (file_exists($activeUsersFile)) {
-    $activeUsers = unserialize(file_get_contents($activeUsersFile));
-}
-$currentTime = time();
-foreach ($activeUsers as $sessionId => $time) {
-    if ($currentTime - $time > $sessionLifetime) {
-        unset($activeUsers[$sessionId]);
+    if (file_exists($file)) {
+        $storedData = unserialize(file_get_contents($file));
+        if (is_array($storedData) && isset($storedData['count']) && isset($storedData['timestamp'])) {
+            $data = $storedData;
+            if ($currentTime - $data['timestamp'] >= $interval) {
+                $data = ['count' => rand(2, 50), 'timestamp' => $currentTime];
+                file_put_contents($file, serialize($data));
+            }
+        }
+    } else {
+        file_put_contents($file, serialize($data));
     }
+
+    return $data['count'];
 }
 
-$activeUsers[session_id()] = $currentTime;
-file_put_contents($activeUsersFile, serialize($activeUsers));
+$activeUserCount = getRandomActiveUsers($randomUsersFile);
 
-$activeUserCount = count($activeUsers);
+// $base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/views';
 $base_url = 'http://' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/');
 ?>
 
-<footer class="footer">
-    <div class="container">
-        <div class="footer-grid">
+<footer class="footer bg-gray-800 text-white py-8 border-t-2 border-blue-600">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <!-- Phần logo và thương hiệu -->
-            <div class="footer-section logo-section">
+            <div class="footer-section bg-gray-700 p-5 rounded-lg shadow-lg border border-gray-600 hover:-translate-y-1 hover:shadow-xl transition">
                 <a href="<?= $base_url; ?>" class="footer-logo">
-                    <span class="logo-text">TRUYENTRANHNET</span>
+                    <span class="logo-text text-3xl font-bold text-blue-500 uppercase tracking-wide hover:text-blue-400 transition">TRUYENTRANHNET</span>
                 </a>
-                <p class="footer-slogan">Kho truyện tranh miễn phí cập nhật 24/7</p>
+                <p class="footer-slogan text-gray-300 text-sm mt-2">Kho truyện tranh miễn phí cập nhật 24/7</p>
             </div>
             <!-- Phần liên kết -->
-            <div class="footer-section links-section">
-                <h5 class="section-title">Liên Kết</h5>
-                <ul class="footer-links">
-                    <li><a href="<?= $base_url; ?>/views/ve-chung-toi.php" class="footer-link">Về Chúng Tôi</a></li>
-                    <li><a href="<?= $base_url; ?>/views/chinh-sach-bao-mat.php" class="footer-link">Chính Sách Bảo Mật</a></li>
-                    <li><a href="<?= $base_url; ?>/views/lien-he.php" class="footer-link">Liên Hệ</a></li>
+            <div class="footer-section bg-gray-700 p-5 rounded-lg shadow-lg border border-gray-600 hover:-translate-y-1 hover:shadow-xl transition">
+                <h5 class="section-title text-blue-500 text-lg uppercase tracking-wide mb-3">Liên Kết</h5>
+                <ul class="footer-links space-y-2">
+                    <li><a href="<?= $base_url; ?>/views/ve-chung-toi.php" class="footer-link text-white hover:text-blue-400 hover:pl-2 transition text-sm">Về Chúng Tôi</a></li>
+                    <li><a href="<?= $base_url; ?>/views/chinh-sach-bao-mat.php" class="footer-link text-white hover:text-blue-400 hover:pl-2 transition text-sm">Chính Sách Bảo Mật</a></li>
+                    <li><a href="<?= $base_url; ?>/views/lien-he.php" class="footer-link text-white hover:text-blue-400 hover:pl-2 transition text-sm">Liên Hệ</a></li>
                 </ul>
             </div>
             <!-- Phần thông tin và lượt truy cập -->
-            <div class="footer-section info-section">
-                <h5 class="section-title">Thông Tin</h5>
-                <p class="footer-info">© 2024 TRUYENTRANHNET</p>
-                <p class="footer-visits"><i class="fas fa-eye"></i> Lượt truy cập: <span class="visit-count"><?= number_format($visitCount); ?></span></p>
-                <p class="footer-active-users"><i class="fas fa-users"></i> Người đang truy cập: <span class="active-count"><?= number_format($activeUserCount); ?></span></p>
-            </div>
-        </div>
-        <!-- Phần mạng xã hội -->
-        <div class="footer-social">
-            <div class="social-icons">
-                <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+            <div class="footer-section bg-gray-700 p-5 rounded-lg shadow-lg border border-gray-600 hover:-translate-y-1 hover:shadow-xl transition">
+                <h5 class="section-title text-blue-500 text-lg uppercase tracking-wide mb-3">Thông Tin</h5>
+                <p class="footer-info text-gray-300 text-sm mb-2">© 2024 TRUYENTRANHNET</p>
+                <p class="footer-visits text-gray-300 text-sm mb-2"><i class="fas fa-eye mr-1"></i> Lượt truy cập: <span class="visit-count font-semibold text-blue-400"><?= number_format($visitCount); ?></span></p>
+                <p class="footer-active-users text-gray-300 text-sm"><i class="fas fa-users mr-1"></i> Người đang truy cập: <span class="active-count font-semibold text-blue-400"><?= number_format($activeUserCount); ?></span></p>
             </div>
         </div>
     </div>
 </footer>
-
-<style>
-.footer {
-    background: linear-gradient(135deg, #1a0033, #2a004d);
-    color: #ffffff;
-    padding: 40px 0;
-    position: relative;
-    overflow: hidden;
-    border-top: 2px solid #00b7eb;
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.footer-section {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 183, 235, 0.2);
-    border: 1px solid rgba(0, 183, 235, 0.3);
-    transition: all 0.3s ease;
-}
-
-.footer-section:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(0, 183, 235, 0.4);
-}
-
-.logo-section .footer-logo {
-    text-decoration: none;
-}
-
-.logo-text {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #00b7eb;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: color 0.3s ease;
-}
-
-.logo-text:hover {
-    color: #00eaff;
-}
-
-.footer-slogan {
-    font-size: 0.9rem;
-    color: #a0c0ff;
-    margin-top: 5px;
-}
-
-.section-title {
-    font-size: 1.2rem;
-    color: #00b7eb;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.footer-links {
-    list-style: none;
-    padding: 0;
-}
-
-.footer-link {
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 0.95rem;
-    display: block;
-    padding: 5px 0;
-    transition: color 0.3s ease;
-}
-
-.footer-link:hover {
-    color: #00eaff;
-    padding-left: 10px;
-}
-
-.footer-info {
-    font-size: 0.85rem;
-    color: #a0c0ff;
-    margin: 5px 0;
-}
-
-.footer-visits {
-    font-size: 0.9rem;
-    color: #a0c0ff;
-    margin: 5px 0;
-}
-
-.footer-active-users {
-    font-size: 0.9rem;
-    color: #a0c0ff;
-    margin: 5px 0;
-}
-
-.visit-count, .active-count {
-    font-weight: 600;
-    color: #00eaff;
-}
-
-.footer-social {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.social-icons {
-    display: inline-flex;
-    gap: 15px;
-}
-
-.social-icon {
-    color: #a0c0ff;
-    font-size: 1.5rem;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.social-icon::before {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: -5px;
-    left: 50%;
-    background: #00eaff;
-    transition: all 0.3s ease;
-}
-
-.social-icon:hover {
-    color: #00eaff;
-    transform: scale(1.2);
-}
-
-.social-icon:hover::before {
-    width: 100%;
-    left: 0;
-}
-
-@media (max-width: 768px) {
-    .footer-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .logo-text {
-        font-size: 1.5rem;
-    }
-
-    .footer-slogan,
-    .footer-info,
-    .footer-visits,
-    .footer-active-users {
-        font-size: 0.8rem;
-    }
-
-    .section-title {
-        font-size: 1rem;
-    }
-
-    .footer-link {
-        font-size: 0.9rem;
-    }
-
-    .social-icon {
-        font-size: 1.2rem;
-    }
-}
-</style>

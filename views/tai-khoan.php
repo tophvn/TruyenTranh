@@ -94,84 +94,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
 $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="../img/logo.png" rel="icon">
     <title>Cập nhật Tài Khoản</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/main.css">
-    <style>
-        .form-container {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
-
-        .form-container h1 {
-            text-align: center;
-            color: #495057;
-            margin-bottom: 20px;
-        }
-
-        .form-container .btn-primary {
-            background-color: #0d6efd;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .form-container .btn-primary:hover {
-            background-color: #0b5ed7;
-            transform: scale(1.02);
-        }
-    </style>
 </head>
-<body>
-<?php include '../includes/header.php'; ?>
-    <div class="container mt-5">
-        <div class="form-container mx-auto" style="max-width: 600px;">
-            <h1><i class="fa fa-user-edit"></i> TÀI KHOẢN</h1>
+<body class="bg-gray-900 text-white dark-mode min-h-screen transition-all duration-300">
+    <?php include '../includes/header.php'; ?>
+
+    <main class="container mx-auto px-4 py-8 pt-16">
+        <div class="content-wrapper max-w-2xl mx-auto">
+            <h1 class="text-center py-4 bg-gradient-to-r from-blue-500 to-blue-300 text-white rounded-lg shadow-lg mb-5 text-2xl font-bold uppercase">
+                <i class="fa fa-user-edit"></i> CẬP NHẬT TÀI KHOẢN
+            </h1>
+
             <?php if (!empty($error)): ?>
-                <div class="alert alert-danger">
-                    <p><i class="fa fa-exclamation-circle"></i> <?php echo $error; ?></p>
+                <div class="bg-red-500 text-white p-4 rounded-lg mb-4 flex items-center">
+                    <i class="fa fa-exclamation-circle mr-2"></i> <?php echo $error; ?>
                 </div>
             <?php endif; ?>
+
             <?php if (!empty($success_message)): ?>
-                <div class="alert alert-success">
-                    <p><i class="fa fa-check-circle"></i> <?php echo $success_message; ?></p>
+                <div class="bg-green-500 text-white p-4 rounded-lg mb-4 flex items-center">
+                    <i class="fa fa-check-circle mr-2"></i> <?php echo $success_message; ?>
                 </div>
             <?php endif; ?>
-            <form action="" method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="name" class="form-label"><i class="fa fa-user"></i> Họ tên</label>
-                    <input type="text" class="form-control" name="name" id="name" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label"><i class="fa fa-envelope"></i> Email</label>
-                    <input type="email" class="form-control" name="email" id="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" disabled>
-                </div>
-                <div class="mb-3">
-                    <label for="avatar" class="form-label"><i class="fa fa-image"></i> Ảnh đại diện</label>
-                    <input type="file" class="form-control" name="avatar" id="avatar" accept="image/*" required>
-                </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Cập nhật</button>
-                </div>
-            </form>
+
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium mb-1 flex items-center">
+                            <i class="fa fa-user mr-2"></i> Họ tên
+                        </label>
+                        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium mb-1 flex items-center">
+                            <i class="fa fa-envelope mr-2"></i> Email
+                        </label>
+                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" disabled
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label for="avatar" class="block text-sm font-medium mb-1 flex items-center">
+                            <i class="fa fa-image mr-2"></i> Ảnh đại diện
+                        </label>
+                        <input type="file" id="avatar" name="avatar" accept="image/*" required
+                               class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                            <i class="fa fa-save mr-2"></i> Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
-    <br>
-    <br>
-    <?php include '../includes/footer.php' ?>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    </main>
 </body>
 </html>

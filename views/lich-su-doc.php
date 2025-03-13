@@ -1,6 +1,7 @@
 <?php
 session_start();
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,117 +9,67 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="../img/logo.png" rel="icon">
     <title>Lịch Sử Đọc</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/main.css">
-    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        #historyContainer {
-            margin-top: 20px;
-        }
-
-        /* Đảm bảo hình ảnh không vượt quá kích thước container */
-        .chapter-image {
-            max-width: 50px;
-            height: auto;
-        }
-
-        /* Ẩn một số cột trên màn hình nhỏ */
-        @media (max-width: 768px) {
-            .hide-on-mobile {
-                display: none;
-            }
-
-            .btn-smaller {
-                font-size: 0.8rem;
-                padding: 5px 10px;
-            }
-        }
-
-        /* Đảm bảo các nút hành động không bị dính sát nhau */
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-        }
-
-        /* Tùy chỉnh bảng */
-        .table th, .table td {
-            vertical-align: middle;
-            text-align: center;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-gray-900 text-white dark-mode min-h-screen transition-all duration-300">
     <?php include '../includes/header.php'; ?>
-    
-    <main class="container mt-5">
-        <h1 class="text-center mb-4">Lịch Sử Đọc</h1>
-        <div id="historyContainer">
+
+    <main class="container mx-auto px-4 py-8 pt-16">
+        <div class="content-wrapper max-w-6xl mx-auto">
+            <h1 class="text-center py-4 bg-gradient-to-r from-blue-500 to-blue-300 text-white rounded-lg shadow-lg mb-5 text-2xl font-bold uppercase">
+                <i class="fa fa-history"></i> LỊCH SỬ ĐỌC
+            </h1>
+
+            <div id="historyContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-6">
+            </div>
         </div>
-        <br>
     </main>
+
     <?php include '../includes/footer.php'; ?>
 
     <script>
         // Lấy lịch sử đọc từ localStorage
         let readHistory = JSON.parse(localStorage.getItem('readHistory')) || [];
-
-        // Hàm xóa chương khỏi lịch sử
         function removeChapterFromHistory(filename) {
             readHistory = readHistory.filter(chapter => chapter.filename !== filename);
             localStorage.setItem('readHistory', JSON.stringify(readHistory));
-            renderHistory();  
+            renderHistory();
         }
-
-        // Hàm hiển thị lịch sử đọc
         function renderHistory() {
             const historyContainer = document.getElementById('historyContainer');
+            historyContainer.innerHTML = ''; 
             if (readHistory.length > 0) {
-                // Sắp xếp lịch sử theo thứ tự truyện mới nhất
-                readHistory.sort((a, b) => b.filename.localeCompare(a.filename));  
-                let historyHtml = `
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th scope="col">Chapter</th>
-                                    <th scope="col" class="hide-on-mobile">Tiêu Đề</th>
-                                    <th scope="col" class="hide-on-mobile">Hình Ảnh</th>
-                                    <th scope="col">Tên Truyện</th>
-                                    <th scope="col">Hành Động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                readHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 readHistory.forEach(chapter => {
-                    historyHtml += `
-                        <tr>
-                            <td>${chapter.chapter_name}</td>
-                            <td class="hide-on-mobile">${chapter.chapter_title}</td>
-                            <td class="hide-on-mobile"><img src="${chapter.chapter_image}" alt="Hình ảnh truyện" class="chapter-image"></td>
-                            <td>${chapter.chapter_story_name}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="${chapter.chapter_link}" target="_blank" class="btn btn-primary btn-smaller">Xem Truyện</a>
-                                    <button class="btn btn-danger btn-smaller" onclick="removeChapterFromHistory('${chapter.filename}')">Xóa</button>
+                    const historyItem = `
+                        <div class="relative group">
+                            <a href="${chapter.chapter_link}">
+                                <img src="${chapter.chapter_image}" alt="${chapter.chapter_story_name}" 
+                                     class="w-full h-48 object-cover rounded-lg shadow-md hover:opacity-90 transition">
+                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center rounded-lg transition">
+                                    <span class="text-white text-sm font-semibold hidden group-hover:block">${chapter.chapter_story_name}</span>
                                 </div>
-                            </td>
-                        </tr>
+                            </a>
+                            <div class="mt-2 text-center">
+                                <p class="text-gray-400 text-xs">${chapter.chapter_name}</p>
+                            </div>
+                            <button class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full hover:bg-red-700 transition flex items-center justify-center"
+                                    onclick="removeChapterFromHistory('${chapter.filename}')">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
                     `;
+                    historyContainer.insertAdjacentHTML('beforeend', historyItem);
                 });
-                historyHtml += `</tbody></table></div>`;
-                historyContainer.innerHTML = historyHtml;
             } else {
                 historyContainer.innerHTML = `
-                    <div class="alert alert-warning text-center" role="alert">
+                    <div class="col-span-full text-center bg-yellow-500 text-white p-4 rounded-lg">
                         Bạn chưa đọc chương truyện nào.
                     </div>
                 `;
             }
         }
-
-        // Gọi hàm render
         renderHistory();
     </script>
 </body>

@@ -38,7 +38,7 @@ TruyenTranhNet là một website đọc truyện tranh trực tuyến miễn ph�
 - Mã hóa thông tin tài khoản người dùng để tăng cường bảo mật.
 
 ### 🔗 Mã hóa API & URL
-- Trong `truyen-detail.php`, **chapter_url** được **mã hóa bằng `base64_encode()`** trước khi đưa vào URL.
+- Trong `truyen-tranh.php`, **chapter_url** được **mã hóa bằng `base64_encode()`** trước khi đưa vào URL.
 - Trong `doc-truyen.php`, **chapter_url** được **giải mã bằng `base64_decode()`** để lấy lại URL gốc.
 
 ## 🚀 API sử dụng
