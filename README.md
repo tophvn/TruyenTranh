@@ -4,8 +4,7 @@ TruyenTranhNet là một website đọc truyện tranh trực tuyến miễn ph�
 
 ## 📌 Ảnh Demo
 
-- **Giao diện trang chủ**  
-  ![Trang chủ](DEMO/1.png)
+
 - **Trang thông tin truyện**  
   ![Trang thông tin truyện](DEMO/2.png)
 - **Giao diện đọc truyện**  
