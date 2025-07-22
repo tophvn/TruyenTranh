@@ -1,7 +1,12 @@
-# Bật Rewrite Engine
 RewriteEngine On
-RewriteBase /TruyenTranhNet/
+RewriteBase /
 ErrorDocument 404 /404.php
+
+# Quy tắc cho /truyen
+RewriteRule ^truyen$ truyen.php [L,QSA]
+RewriteRule ^truyen/(.+)$ truyen.php?id=$1 [L,QSA]
+
+# Các quy tắc hiện có
 RewriteRule ^hoan-thanh/([0-9]+)/?$ hoan-thanh.php?page=$1 [L,QSA]
 RewriteRule ^hoan-thanh/?$ hoan-thanh.php?page=1 [L,QSA]
 RewriteRule ^views/doc-truyen/([^/]+)/([^/]+)/?$ views/doc-truyen.php?story_slug=$1&chapter_name=$2 [L,QSA]
